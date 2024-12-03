@@ -9,17 +9,17 @@ export const useUser = defineStore(
     const token = ref('')
     const userProfile = ref({
       nickname: '',
-      user_id: 0,
-      avatar_url: '',
+      avatar: '',
       school: '',
       sex: '',
-      intro: '',
+      signature: '',
+      user_id: ''
     })
 
-    // 保存会员信息，登录时使用
-    const setProfile = (val: any, user_id: any) => {
+    // 保存信息，登录时使用
+    const setProfile = (val: any) => {
       userProfile.value = val
-      userProfile.value.user_id = user_id
+
     }
 
     const setToken = (val: any) => {

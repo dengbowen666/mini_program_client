@@ -6,7 +6,7 @@ import getUserInfo from '@/API/get/getUserInfo';
 import { useUser } from '@/stores/modules/useUser';
 import { storeToRefs } from 'pinia';
 const user = useUser();
-const {setProfile}= user;
+const {setProfile,setUserId}= user;
 const { userProfile } = storeToRefs(user);
 const { user_id } = userProfile.value;
 const { token } = user
@@ -26,16 +26,21 @@ const getUser = async () => {
     //  token在请求头里
   })
   if (res.code != '1') {
+
     uni.showToast({
       title: '获取用户信息失败,重新登录',
       icon: 'error',
     }).then(() => {
-      // uni.navigateTo({
-      //   url: '/pages/login/login'
-      // })
+      uni.navigateTo({
+        url: '/pages/login/login'
+      })
     })
   } else {
-    setProfile(res.data,user_id)
+     console.log(res);
+
+    setProfile(res.data)
+    setUserId(user_id)
+
   }
 }
 const goFind = () => {

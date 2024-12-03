@@ -1,8 +1,8 @@
 <template>
   <view>
-    <view v-for="(yearViews, year) in viewsResult" :key="year">
+    <view v-for="(yearposts, year) in postsResult" :key="year">
       <view class="year">{{ year }}年</view>
-      <view class="view-item" v-for="view in yearViews" :key="view.article_id">
+      <view class="view-item" v-for="view in yearposts" :key="view.article_id">
         <view class="left">
           <view class="day">{{ view.viewDay }}</view>
           <view class="month">{{ view.viewMonth }}月</view>
@@ -15,7 +15,7 @@
         <view class="right">
 
 
-
+          <view class="status" :class="statusClass(view.status)">{{ view.status }}</view>
           <view class="set">
 
             <view class="uni-list">
@@ -45,7 +45,7 @@
 import { onMounted } from 'vue';
 import { ref } from 'vue';
 
-const views = ref([{
+const posts = ref([{
   article_id: '1',
   viewTime: '2024-03-15T08:00:00Z',
   title: '文章1',
@@ -72,31 +72,36 @@ const views = ref([{
   viewTime: '2023-12-25T12:00:00Z',
   title: '文章5'
 }]);
-const viewsResult = ref({});
+const postsResult = ref({});
 import { useUser } from '@/stores/modules/useUser';
+import { storeToRefs } from 'pinia';
+import { getMyPublishedArticles } from '@/API/get/article/getMyPublishedArticles';
 const { userProfile } = useUser();
 const { user_id } = userProfile;
-import { getMyPublishedArticles } from '@/API/get/article/getMyPublishedArticles';
-const getViews = async () => {
-  // const res= await getMyPublished(
-  //     {
-  //       user_id: user_id,
-  //       pageNumber:pageNumber.value,
-  //       pageSize: 10
-  //   }
-  // );
-  //   if (res.code == 200) {
-  //     views.value = res.data.articles
+const getposts = async () => {
+  console.log(userProfile);
 
-  groupByYear(views.value);
-  //   }else {
-  // wx.showToast({
-  //   title: res.msg,
-  //   icon: 'error',
-  //   duration: 2000
-  // })
+  const res = await getMyPublishedArticles(
+    {
+      sort:'time',
+      userId: user_id,
+      page: pageNumber.value,
+      pageSize: 10
+    }
+  );
+  if (res.code == 1) {
+    posts.value = res.data.articles
 
-  //   }
+
+  } else {
+    wx.showToast({
+      title: res.msg,
+      icon: 'error',
+      duration: 2000
+    })
+
+  }
+  groupByYear(posts.value);
 }
 
 // 分组函数
@@ -109,12 +114,12 @@ function groupByYear(articles: object[]) {
     article.viewMonth = convertToChineseNumber(month); // 确保月份是两位数
     article.viewDay = day.toString().padStart(2, "0")
     // 确保日期是两位数
-    if (!viewsResult.value[year]) {
-      viewsResult.value[year] = []; // 修正这里，确保是通过.value访问和修改ref的值
+    if (!postsResult.value[year]) {
+      postsResult.value[year] = []; // 修正这里，确保是通过.value访问和修改ref的值
     }
-    viewsResult.value[year].push(article);
+    postsResult.value[year].push(article);
   }
-  console.log(viewsResult.value);
+  console.log(postsResult.value);
 
 }
 function convertToChineseNumber(num: number) {
@@ -124,11 +129,11 @@ function convertToChineseNumber(num: number) {
 const pageNumber = ref(1);
 // 调用获取视图历史的函数
 onMounted(() => {
-  getViews();
+  getposts();
 });
 // uni.onReachBottom(() => {
 //  pageNumber.value++
-//   getViews();
+//   getposts();
 // })
 const index = ref(0);
 const array = ['仅阅读', '可下载'];
@@ -151,7 +156,7 @@ const deleteAtc = (article_id: string) => {
       duration: 2000
     })
     // 删除成功后刷新页面
-    getViews();
+    getposts();
   }).catch((err) => {
     wx.showToast({
       title: '删除失败',
@@ -162,6 +167,18 @@ const deleteAtc = (article_id: string) => {
 
 
 }
+const statusClass = (status) => {
+  switch (status) {
+    case '已发布':
+      return 'status-published';
+    case '审核中':
+      return 'status-pending';
+    case '未通过':
+      return 'status-rejected';
+    default:
+      return '';
+  }
+};
 </script>
 
 <style>
@@ -223,8 +240,25 @@ const deleteAtc = (article_id: string) => {
 
 .right {
 
+  width: 200rpx;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
+
+.status {
   width: 100rpx;
   height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10rpx;
+  background-color: #f5f5f5;
+  color: #999;
+  font-size: 12px;
+  margin-left: 10rpx;
 
 }
 
@@ -234,5 +268,35 @@ const deleteAtc = (article_id: string) => {
   line-height: 20px;
   font-size: 20rpx;
 
+}
+
+.status-published {
+  background-color: #e0f9d7;
+  color: #67c23a;
+}
+
+.status-pending {
+  background-color: #f9e3a2;
+  color: #faad14;
+}
+
+.status-rejected {
+  background-color: #fde2e2;
+  color: #f56c6c;
+}
+
+.status-published {
+  background-color: #e0f9d7;
+  color: #67c23a;
+}
+
+.status-pending {
+  background-color: #f9e3a2;
+  color: #faad14;
+}
+
+.status-rejected {
+  background-color: #fde2e2;
+  color: #f56c6c;
 }
 </style>

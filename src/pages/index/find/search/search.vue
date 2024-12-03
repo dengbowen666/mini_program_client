@@ -8,7 +8,7 @@
       <text v-for="item in historyResult" :key="item" @click="search(item)">{{ item }}</text>
 
     </view>
-    <scroll-view :scroll-y="true" class="scroll-y" @scrolltolower="updateResults" v-else="!isshowHistory">
+    <scroll-view :scroll-y="true" class="scroll-y" @scrolltolower="updateResults" v-if="!isshowHistory&&searchResult.length>0">
 
 
       <view class="searchResult">
@@ -16,6 +16,7 @@
 
       </view>
     </scroll-view>
+    <view class="noResult" v-if="!isshowHistory&&searchResult.length===0">空空如也</view>
   </view>
 </template>
 
@@ -53,7 +54,9 @@ const search = async (keyword: string) => {
     pageSize: 10
   })
   if (res.code === 1) {
-    searchResult.value = res.data
+    searchResult.value = res.data.records
+    console.log(isshowHistory.value, searchResult.value);
+
   }
   // 得到返回一个数组，呈现给用户搜索结果,点击进入文章详情,返回的数据包括文章id，文章标题，文章内容，文章作者，文章发布时间，文章评论数，文章收藏数
 }

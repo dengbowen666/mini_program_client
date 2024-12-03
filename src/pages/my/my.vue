@@ -7,15 +7,16 @@ const goToEdit = () => {
 const goToAbout = () => {
   uni.navigateTo({ url: '/pages/my/about/about' })
 }
-const goToFeedback = () => {
-  uni.navigateTo({ url: '/pages/my/feedback/feedback' })
-}
+// const goToFeedback = () => {
+//   uni.navigateTo({ url: '/pages/my/feedback/feedback' })
+// }
 import { ref } from 'vue'
 import { useUser } from '@/stores/modules/useUser'
 import { storeToRefs } from 'pinia'
 const userUser = useUser()
 const { userProfile } = storeToRefs(userUser)
-const { avatar_url, nickname } = userProfile.value
+// const { avatar, nickname } = userProfile.value
+// 事实证明，直接用userProfile.avator即可做到实时更新，解构赋值反而不行，失去了响应式
 </script>
 
 <template>
@@ -23,9 +24,9 @@ const { avatar_url, nickname } = userProfile.value
     <image class="bg-img" src="../../static/images/bg.jpg"></image>
     <view class="avator">
 
-      <image class="avator_img" :src="`${avatar_url}`"></image>
+      <image class="avator_img" :src="`${userProfile.avatar}`"></image>
 
-      <text class="name">{{ nickname }}</text>
+      <text class="name">{{ userProfile.nickname||"开朗的大山" }}</text>
 
 
     </view>
@@ -35,7 +36,7 @@ const { avatar_url, nickname } = userProfile.value
 
         <view class="option-item" @click="goToEdit"><text>编辑信息</text><text>></text></view>
         <view class="option-item" @click="goToAbout"><text>关于小程序</text><text>></text></view>
-        <view class="option-item" @click="goToFeedback"><text>反馈</text><text>></text></view>
+        <!-- <view class="option-item" @click="goToFeedback"><text>反馈</text><text>></text></view> -->
         <view class="option-item"><text>退出登录</text><text>></text></view>
       </view>
     </view>
@@ -65,6 +66,7 @@ const { avatar_url, nickname } = userProfile.value
   top: 0;
   left: 0;
   z-index: -1;
+  background: #000;
 }
 
 .avator_img {
@@ -72,6 +74,7 @@ const { avatar_url, nickname } = userProfile.value
   height: 200rpx;
   border-radius: 50%;
   margin-bottom: 10rpx;
+  background: #ccc;
 }
 
 .name {

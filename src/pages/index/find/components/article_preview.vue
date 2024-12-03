@@ -1,7 +1,9 @@
 <!-- 文章的预览一小块，介绍文章基本信息，可供点击进入详情 -->
+
+
 <template>
-	<view>
-  <view class="post">
+
+  <view class="post " @click="goArticleDetail(post.id)">
         <view class=" post-head">
           <view class="post-title">{{ post.title }}</view>
           <view style="display:flex">
@@ -9,18 +11,20 @@
           </view>
         </view>
         <view class="post-meta">
+          <view>{{ post.author }}</view>
           <view class="post-time">{{ post.time }}</view>
-          <view class="post-popularity">热度: {{ post.popularity }}</view>
-          <view class="post-description">{{ post.des }}</view>
+          <view class="post-popularity">热度: {{ post.heat }}</view>
+          <view class="post-description">{{ post.description }}</view>
 
         </view>
       </view>
-    </view>
+
 
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { goArticleDetail } from '@/hook/usegoArticleDetail'
 //获取props参数
 const props = defineProps({
   post: {

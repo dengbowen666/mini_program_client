@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { getMyFavorites } from '@/API/get/comment/getMyFavorites';
+import  getMyFavorites  from '@/API/get/star/getMyFavorites';
 import { ref, onMounted } from 'vue';
 import { useUser } from '@/stores/modules/useUser';
 

@@ -40,12 +40,12 @@
         "navigationBarTitleText": ""
       }
     },
-    {
-      "path": "pages/my/feedback/feedback",
-      "style": {
-        "navigationBarTitleText": "意见反馈"
-      }
-    },
+    // {
+    //   "path": "pages/my/feedback/feedback",
+    //   "style": {
+    //     "navigationBarTitleText": "意见反馈"
+    //   }
+    // },
     {
       "path": "pages/index/find/find",
       "style": {

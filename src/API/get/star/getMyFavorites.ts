@@ -1,10 +1,8 @@
 import { request } from '@/utils/request'
-enum getMyFavoritesApi {
-  getMyFavoritesApi = '/api/user/getMyFavorites',
-}
+
 const getMyFavorites = (params: any) => {
   return request({
-    url: getMyFavoritesApi.getMyFavoritesApi,
+    url: '/api/star/getMyStars',
     method: 'get',
     params: params,
   })

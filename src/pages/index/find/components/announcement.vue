@@ -13,5 +13,8 @@ const props = defineProps({
 </script>
 
 <style scoped>
-
+.important {
+  color: yellowgreen;
+  margin-right: 10px;
+}
 </style>

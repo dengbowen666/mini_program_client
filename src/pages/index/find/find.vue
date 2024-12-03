@@ -12,7 +12,7 @@
 
     <ul class="nav">
       <li v-for="(item, index) in navItems" :key="index" :class="{ active: activeIndex === index }"
-        @click="getNavArticles(item.name)">
+        @click="getNavArticles(item.type)">
         {{ item.name }}
       </li>
     </ul>
@@ -26,7 +26,7 @@
 
     <!-- 滚动区域：帖子列表 -->
     <scroll-view :scroll-y="true" class="scroll-y" @scrolltolower="updatePosts">
-      <article_preview v-for="post in posts" :key="post.id" :post="post" @click="goArticleDetail(post.id)">
+      <article_preview v-for="post in posts" :key="post.id" :post="post">
       </article_preview>
     </scroll-view>
 
@@ -38,7 +38,7 @@ import { ref, onMounted } from 'vue'
 import announcement from '@/pages/index/find/components/announcement.vue'
 import article_preview from '@/pages/index/find/components/article_preview.vue'
 import { getArticles } from '@/API/get/article/getArticles'
-import { goArticleDetail } from '@/hook/usegoArticleDetail'
+
 
 const goSearch = () => {
   uni.navigateTo({
@@ -50,24 +50,24 @@ const goSearch = () => {
 const announcements = ref(['10月28日更新优化说明', '维护绿色交流环境，严厉打击...', '新版用户协议及隐私政策已更新'])
 const navItem = ref('')
 const sort = ref('time')
-const reset = () => {
-  sort.value = 'time'
-  index.value = 0
-  posts.value = []
-}
-const getNavArticles = async (itemName: string) => {
+const activeIndex = ref(0) // -1 表示没有任何项目被选中
+const getNavArticles = async (itemType: string) => {
   //  reset()
-  activeIndex.value = navItems.value.findIndex(item => item.name === itemName)
+  activeIndex.value = navItems.value.findIndex(item => item.type
+    === itemType)
+    console.log(activeIndex.value);
 
+  navItem.value = itemType
   const res = await getArticles({
     type: 'nav',
-    navName: itemName,
+    navName: navItem.value,
     sort: sort.value,
     pageSize: 10,
     page: 1
   })
   if (res.code === 1) {
-    posts.value = res.data
+    console.log(res.data)
+    posts.value = res.data.records
   }
 }
 import { getAnnouncement } from '@/API/get/announcement/getAnnouncement'
@@ -76,8 +76,10 @@ const getAnnouncementList = async () => {
     limit: 3
   })
   if (res.code === 1) {
-    announcements.value = res
+
+    announcements.value = res.data
   }
+  //done
 }
 onMounted(() => {
   getNavArticles('recommend')
@@ -95,23 +97,31 @@ const posts = ref([
   // 你可以在这里添加更多的帖子对象
 ])
 const index = ref(0)
-const array = ref(['默认排序', '最新发布', '最多浏览', '最多回复'])
+const array = ref(['time', 'heat'])
+// 排序方式改变时触发
 const bindPickerChange = (e) => {
+  // 更新索引
+  index.value = e.detail.value;
 
-  index.value = e.detail.value
-}
+  // 根据索引更新排序方式
+  sort.value = array.value[index.value];
+
+  // 根据新的排序方式重新获取导航文章
+  getNavArticles(navItems.value[activeIndex.value].type);
+};
+// done
 const navItems = ref([{ name: '推荐', type: 'recommend' }, { name: '官方', type: 'official' }, { name: '全部', type: 'all' }])
-const activeIndex = ref(0) // -1 表示没有任何项目被选中
 
 
+const page = ref(1)
 const updatePosts = async () => {
-  index.value++;
+  page.value++;
   const res = await getArticles({
     type: 'nav',
     navName: navItem.value,
     sort: sort.value,
     pageSize: '10',
-    pageNumber: index.value.toString()
+    pageNumber: page.value.toString()
   });
 
   if (res.code === 1) {
@@ -198,7 +208,7 @@ const updatePosts = async () => {
   background-color: #eaeaea;
 }
 
-.nav li.active {
+li.active {
   background-color: #007bff;
   color: #fff;
 }

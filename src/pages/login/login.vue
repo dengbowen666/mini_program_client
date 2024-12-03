@@ -65,12 +65,12 @@ function wechatLogin() {
           console.log(res);
 
           if (res.code === 1) {
-            console.log(user_id, token.value);
+
             // 登陆成功，后端返回用户id，token,等信息
             setUserId.value(res.data.userId)
             setToken.value(res.data.token)
 
-            console.log(user_id, token.value);
+
 //这里token输出变化了，但是user_id没有变化，是因为token保持了对象的引用，而user_id是获取了就定死的，所以不会变化
             uni.switchTab({
               url: '/pages/index/index',
@@ -78,13 +78,13 @@ function wechatLogin() {
           }
         }).catch(err => {
           console.log(err)
-          // uni.switchTab({
-          //   url: '/pages/index/index',
-          // })
-          // uni.showModal({
-          //   title: '登录失败',
-          //   content: '请刷新小程序后重新操作',
-          // });
+          uni.switchTab({
+            url: '/pages/index/index',
+          })
+          uni.showModal({
+            title: '登录失败',
+            content: '请刷新小程序后重新操作',
+          });
         })
 
       },

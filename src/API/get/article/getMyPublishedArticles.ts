@@ -1,10 +1,8 @@
 import { request } from '@/utils/request'
-enum getMyPublishedArticlesApi {
-  getMyPublishedArticlesApi = '/api/article/getMyPublishedArticles',
-}
+
 export const getMyPublishedArticles = (data: any) => {
   return request({
-    url: getMyPublishedArticlesApi.getMyPublishedArticlesApi,
+    url: '/api/article/getMyPostArticle',
     method: 'get',
     data: data,
   })

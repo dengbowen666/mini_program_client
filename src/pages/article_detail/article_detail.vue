@@ -1,23 +1,26 @@
 <template>
   <div class="article-container">
     <div class="article-header">
-      <div class="title">题目：{{ articleDetail.title }}</div>
+      <div class="title">{{ articleDetail.title }}</div>
       <div class="meta">
         <p>
-          <span class="publish-time">发表时间：{{ articleDetail.publishTime }}</span>
+          <span class="publish-time">发表时间：{{ transformTime(articleDetail.publish_time) }}</span>
         </p>
+
         <p>
-          <span class="author-name">作者：<view>{{ articleDetail.author.avatar }}</view>
-            <view>{{ articleDetail.author.name }}</view>
+          <span class="author-name">作者：{{ articleDetail.author.name }}<view>{{ articleDetail.author.avatar }} </view>
 
 
+            <p>
+              标签:<span v-for="tag in articleDetail.tags" :key="tag" class="tag">{{ tag }}</span>
+            </p>
           </span>
         </p>
       </div>
     </div>
 
     <div class="article-content">
-      <div class="desc">{{ articleDetail }}</div>
+      <p>{{ articleDetail.description }}</p>
       <div class="file">
         <view class="primary-btn" @click="handlePreview">点击预览</view>
         <div class="button-group">
@@ -43,11 +46,11 @@
 
       </div>
       <ul>
-        <li v-for="item in commentList" :key="item.comment_id" class="comment-item">
+        <li v-for="item in commentList" :key="item.commentId" class="comment-item">
           <div class="comment-content">{{ item.content }}</div>
           <div class="comment-meta">
-            <span class="username">{{ item.username }}</span>
-            <span class="time">{{ item.time }}</span>
+            <span class="username">{{ item.author.name }}</span>
+            <span class="time">{{ transformTime(item.time) }}</span>
           </div>
         </li>
       </ul>
@@ -72,12 +75,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted,watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { getArticleDetail } from '@/API/get/article/getArticleDetail';
 import { getComment } from '@/API/get/comment/getComment';
-import { getMyFavorites } from '@/API/get/comment/getMyFavorites';
+import getMyFavorites from '@/API/get/star/getMyFavorites';
 import postStar from '@/API/post/favorites/postStar';
-import postDownLoad from '@/API/post/postDownLoad';
+
 import makeFavorites from '@/API/post/favorites/makeFavorites';
 import { useUser } from '@/stores';
 const { userProfile } = useUser();
@@ -92,46 +95,114 @@ const articleDetail = ref({
   },
   description: '',
   file_url: '',
-  article_id: '',
   tags: [],
 });
 
 const commentList = ref([
-  {
-    comment_id: '1',
-    content: '这是一个评论',
-    username: '用户1',
-    time: '2021-01-01',
-  },
-  {
-    comment_id: '2',
-    content: '这是另一个评论',
-    username: '用户2',
-    time: '2021-01-02',
-  },
+
 ]);
 
 const showFavoritePopup = ref(false);
 const favoritesList = ref([]);
-const myid = user_id
+
+
 
 const handleDownload = () => {
-  window.alert('下载中');
-  fetch(articleDetail.value.file_url)
-    .then((res) => res.blob())
-    .then((blob) => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'article.pdf'; // You may modify this to use the article's actual name
-      link.click();
-    })
-    .catch(() => {
-      window.alert('下载失败');
-    });
+  uni.downloadFile({
+    url: articleDetail.value.file_url,
+    success: (res) => {
+      if (res.statusCode === 200) {
+        const tempFilePath = res.tempFilePath;
+        uni.saveFile({
+          tempFilePath,
+          success: (saveRes) => {
+            const savedFilePath = saveRes.savedFilePath;
+            console.log('savedFilePath:', savedFilePath);
+
+            // 调用后端接口，记录下载行为
+            postDownload(savedFilePath, articleId.value, user_id);
+
+            uni.showToast({
+              title: '下载成功',
+              icon: 'success',
+            });
+          },
+          fail: (err) => {
+            uni.showToast({
+              title: '保存失败',
+              icon: 'error',
+            });
+          },
+        });
+      }
+    },
+    fail: (err) => {
+      uni.showToast({
+        title: '下载失败',
+        icon: 'error',
+      });
+    },
+  });
 };
 
+const postDownload = (filePath, articleId, userId) => {
+  // 这里使用uni.request或其他HTTP库发送请求到你的后端API
+  uni.request({
+    url: '/api/download/uploadDownloads', // 替换成你的后端接口地址
+    method: 'POST',
+    data: {
+      loacalpath: filePath,
+      materialId: articleId,
+      userId: userId,
+    },
+    success: (res) => {
+      if (res.statusCode === 200 && res.data.code === 1) {
+        console.log('下载记录成功', res.data);
+      } else {
+        console.error('下载记录失败', res.data);
+      }
+    },
+    fail: (err) => {
+      console.error('请求失败', err);
+    },
+  });
+};
+
+
+
 const handlePreview = () => {
-  window.open(articleDetail.value.file_url, '_blank');
+  const fileUrl = articleDetail.value.file_url;
+  console.log(fileUrl);
+
+  // 检查是否是PDF文件
+  if (fileUrl.endsWith('.pdf')) {
+    // 使用uni.previewImage预览PDF（某些平台可能支持）
+    uni.previewImage({
+      current: fileUrl, // 当前显示文件的链接
+      urls: [fileUrl] // 需要预览的文件http链接列表
+    });
+  } else if (fileUrl.endsWith('.docx') || fileUrl.endsWith('.doc')) {
+    // 对于Word文件，可能需要下载后在其他应用中打开
+    uni.showModal({
+      title: '预览文件',
+      content: '无法直接预览Word文档，是否下载文件？',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户点击确定，进行下载操作
+          handleDownload();
+        } else if (res.cancel) {
+          // 用户点击取消，不进行任何操作
+          console.log('用户取消预览');
+        }
+      }
+    });
+  } else {
+    // 其他文件类型处理
+    uni.showToast({
+      title: '不支持预览',
+      icon: 'none',
+    });
+  }
 };
 
 const handleFavorite = () => {
@@ -140,11 +211,14 @@ const handleFavorite = () => {
 };
 
 const getFolders = async () => {
-  const res = await getMyFavorites({ user_id: myid, pageSize: 10, pageNumber: 1 });
-  if (res.code === 1) {
+  const res = await getMyFavorites({ favorites_id: 0, user_id: user_id, pageSize: 10, pageNumber: 1 });
+  if (res) {
     favoritesList.value = res.data;
+    console.log(res);
+
   } else {
-    window.alert('获取收藏失败');
+    console.log('获取收藏夹失败');
+
   }
 };
 
@@ -164,7 +238,7 @@ const newFavoriteName = ref('');
 const handleAddnewFavorite = async () => {
 
   if (newFavoriteName) {
-    const res = await makeFavorites({ user_id: myid, folder_name: newFavoriteName.value, description: '学习' });
+    const res = await makeFavorites({ user_id: user_id, folder_name: newFavoriteName.value });
     if (res.code === 1) {
       window.alert('创建成功');
       getFolders();
@@ -175,13 +249,13 @@ const articleId = ref(0);
 import { onLoad } from '@dcloudio/uni-app';
 onLoad(async (Option) => {// 获取路由传过来的文章ID
 
-   articleId.value = Option.article_id;
-  articleDetail.value.article_id = articleId.value;
+  articleId.value = Option.article_id;
   console.log(articleId.value);
+
 
   try {
     updateComments();
-    const detailres = await getArticleDetail({ article_id: articleDetail.value.article_id });
+    const detailres = await getArticleDetail(articleId.value);
     if (detailres.code === 1) {
       articleDetail.value = detailres.data;
     } else {
@@ -193,20 +267,17 @@ onLoad(async (Option) => {// 获取路由传过来的文章ID
   }
 
 })
-// watch( ()=>articleId.value, async (newVal) => {
-//   index.value = 0;
-//   updateComments();
-
-// })
 
 
-const index = ref(0);
+const pageNumber = ref(0);
 
 
 const updateComments = async () => {
-  index.value++
-  const res = await getComment({ article_id: articleDetail.value.article_id, pageSize: index.value, pageNumber: 4 });
-  commentList.value = [...commentList.value, ...res.data];
+  pageNumber.value++
+  const res = await getComment({ article_id: articleId.value, pageSize: 4, pageNumber: pageNumber.value });
+  console.log(res.data.records);
+
+  commentList.value = [...commentList.value, ...res.data.records];
 }
 const showAddCommentPopup = ref(false);
 const newCommentContent = ref('');
@@ -216,10 +287,17 @@ const handleAddComment = () => {
 import postComment from '@/API/post/postComment';
 const handleSubmitComment = async () => {
   if (newCommentContent.value.trim() === '') {
-    window.alert('评论内容不能为空');
+    // window.alert('评论内容不能为空');
+    uni.showToast({
+
+      title: '评论内容不能为空',
+      icon: 'none',
+    })
     return;
   }
-  postComment({ article_id: articleDetail.value.article_id, comment_content: newCommentContent.value, publish_time: new Date(), userId: user_id }).then(async (res) => {
+  console.log(articleId.value);
+
+  postComment({ article_id: articleId.value, comment_content: newCommentContent.value, publish_time: new Date(), userId: user_id }).then(async (res) => {
     if (res.code === 1) {
       newCommentContent.value = '';
       showAddCommentPopup.value = false;
@@ -229,7 +307,8 @@ const handleSubmitComment = async () => {
         mask: true
       })
       // 重新获取评论列表
-      const res = await getComment({ article_id: articleDetail.value.article_id, pageSize: index.value, pageNumber: 1 });
+      pageNumber.value = 0; // 重置页码
+      const res = await getComment({ article_id: articleId.value, pageSize: 4, pageNumber: pageNumber.value });
       commentList.value = res.data;
     }
     else {
@@ -237,12 +316,33 @@ const handleSubmitComment = async () => {
         title: '评论失败',
         icon: 'none'
       })
+      showAddCommentPopup.value = false;
     }
   })
 
 
 
 };
+const transformTime = (timeArray: Array<number>) => {
+  const year = timeArray[0];
+  const month = timeArray[1] - 1; // 月份从0开始，所以需要减1
+  const day = timeArray[2];
+  const hours = timeArray[3];
+  const minutes = timeArray[4];
+  const seconds = timeArray[5];
+  // 创建一个Date对象
+  const date = new Date(year, month, day, hours, minutes, seconds);
+
+  // 格式化日期和时间
+  const formattedDate = date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+
+  });
+  return formattedDate;
+}
 </script>
 
 <style scoped>

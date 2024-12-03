@@ -41,8 +41,21 @@ function handleRequest(options: any, resolve: Function, reject: Function) {
     header: options.header,
     data: options.data,
     success: (response) => {
-      return resolve(response.data)
+       // 检查状态码是否为401
+      if (response.statusCode === 401) {
+        // 状态码为401，跳转到登录页面
+        const userstore = useUser()
+        userstore.setToken('')
+        // 清空 老的token
+        uni.reLaunch({
+          url: '/pages/login/login'
+        });
+        return;
+      }
+      // 状态码不是401，处理响应数据
+      resolve(response.data);
     },
+
     fail: (fail) => {
       console.log('fail', fail)
       return reject(fail)

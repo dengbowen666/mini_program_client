@@ -1,11 +1,11 @@
 import { request } from "@/utils/request"
-enum getArticleDetailApi {
-  getArticleDetail = "/api/article/getArticleDetail"
-}
-export const getArticleDetail = (data: any) => {
+
+export const getArticleDetail = (material_id) => {
   return request({
-    url: getArticleDetailApi.getArticleDetail,
-    method: "get",
-   data
+    url: '/api/article/getArticleDetail',
+    method: 'get',
+    data: {
+      material_id
+    }
   })
 }

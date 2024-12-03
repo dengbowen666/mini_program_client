@@ -6,7 +6,7 @@
       <view class="infoItem">
         <view class="infoItemLeft">头像</view>
         <view class="infoItemRight">
-          <image :src="`${avatar_url}`" mode="aspectFill" class="avatar" @click="chooseAvatar"></image>
+          <image :src="`${avatar}`" mode="aspectFill" class="avatar" @click="chooseAvatar"></image>
         </view>
       </view>
       <view class="infoItem">
@@ -52,59 +52,96 @@ const { setProfile, userProfile } = userStore
 import { ref, reactive, onMounted } from 'vue'
 const nickname = ref('')
 const signature = ref('')
-const avatar_url = ref('')
+const avatar = ref('')
 const sex = ref('')
 const school = ref('')
+let userId=ref()
 onMounted(() => {
   // 到达个人界面，就从userStore中获取用户信息
   loadUserProfile()
 
 })
 const loadUserProfile = () => {
+  console.log(userStore.token);
+
   nickname.value = userStore.userProfile.nickname
-  signature.value = userStore.userProfile.intro
-  avatar_url.value = userStore.userProfile.avatar_url
+  signature.value = userStore.userProfile.signature
+  avatar.value = userStore.userProfile.avatar
   sex.value = userStore.userProfile.sex
   school.value = userStore.userProfile.school
-
+  userId.value = userStore.userProfile.user_id
 }
-import updateInfo from '@/API/post/updateInfo';
+
 const saveProfile = () => {
-  updateInfo({
+
+  const formData = {
+    userId: userId.value,
     nickname: nickname.value,
     signature: signature.value,
-    avatar_url: avatar_url.value,
     sex: sex.value,
-    school: school.value
-  }).then(res => {
-    console.log(res)
-    if (res.code === 1) {
-      // 成功就把用户信息保存到pinia
-      const user_id = res.user_id
-      setProfile({
-        nickname: nickname.value,
-        signature: signature.value,
-        avatar_url: avatar_url.value,
-        sex: sex.value,
-        school: school.value,
-        user_id: user_id
-      })
+    school: school.value,
+  }
+  uni.uploadFile({
+    url: 'http://47.108.183.218:8080/api/user/updateInfo', // 服务器接口地址
+    filePath: avatar.value, // 头像文件路径
+    name: 'file',
+    formData: formData,
+    header: {
+      'Content-Type': 'multipart/form-data',
+      authentication:  userStore.token,
+    },
+    success: (res) => {
+      // 上传成功后的处理
 
+      if (res) {
+        // 更新用户信息
+        setProfile({
+          nickname: nickname.value,
+          signature: signature.value,
+          avatar: avatar.value, // 可能需要使用服务器返回的URL
+          sex: sex.value,
+          school: school.value,
+        });
+        wx.showToast({
+          title: '保存成功',
+          icon: 'success',
+          duration: 2000
+        });
+
+      } else {
+        console.log(res);
+
+        wx.showToast({
+          title: '保存失败',
+          icon: 'none'
+        });
+
+      }
+      loadUserProfile()
+    },
+    fail: () => {
       wx.showToast({
-        title: '保存成功',
-        icon: 'success',
-        duration: 2000
-      })
-    } else {
-      wx.showToast({
-        title: '保存失败',
-      })
+        title: '上传失败',
+        icon: 'none'
+      });
     }
-  })
-}
-const chooseAvatar = () => {
+  });
 
-}
+};
+const chooseAvatar = () => {
+  uni.chooseImage({
+    count: 1, // 默认9，设置为1表示只能选择一张图片
+    sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+    sourceType: ['album'],
+    success: (res) => {
+      // res.tempFilePaths 是选择的图片的本地文件路径数组
+      if (res.tempFilePaths.length > 0) {
+        avatar.value = res.tempFilePaths[0]; // 设置头像的本地路径
+        console.log('选择的头像路径：', res.tempFilePaths[0]);
+      }
+    }
+  });
+};
 </script>
 
 <style>
@@ -147,7 +184,7 @@ const chooseAvatar = () => {
   padding: 20rpx;
   border-bottom: 1rpx solid #ccc;
 
- 
+
 }
 
 .infoItem:last-child {
@@ -171,6 +208,7 @@ const chooseAvatar = () => {
   height: 80rpx;
   border-radius: 50%;
   margin-right: 20rpx;
+  background-color: #222;
 }
 
 .saveBtn {
