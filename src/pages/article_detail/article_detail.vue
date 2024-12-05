@@ -11,10 +11,11 @@
           <span class="author-name">作者：{{ articleDetail.author.name }}<view>{{ articleDetail.author.avatar }} </view>
 
 
-            <p>
-              标签:<span v-for="tag in articleDetail.tags" :key="tag" class="tag">{{ tag }}</span>
-            </p>
+
           </span>
+        </p>
+        <p>
+          标签:<span v-for="tag in articleDetail.tags" :key="tag" class="tag">{{ tag }}</span>
         </p>
       </div>
     </div>
@@ -24,10 +25,20 @@
       <div class="file">
         <view class="primary-btn" @click="handlePreview">点击预览</view>
         <div class="button-group">
-          <button class="success-btn operate" @click="handleDownload"><uni-icons type="download" color=""
-              size="24" />下载</button>
-          <button class="warning-btn operate" @click="handleFavorite">
-            <uni-icons type="star" color="" size="24" /> 收藏</button>
+          <view>
+            <button class="success-btn operate" @click="handleDownload" v-if="articleDetail.status == 1"><uni-icons
+                type="download" color="" size="24" />下载</button>
+            <view class="" v-if="articleDetail.status == 3">已下载</view>
+            <view class="" v-if="articleDetail.status == 2">仅阅读</view>
+          </view>
+          <view>
+            <button v-if="!articleDetail.isStar" class="warning-btn operate" @click="handleFavorite">
+              <uni-icons type="star" color="" size="24" /> 收藏</button>
+            <button v-else class="warning-btn operate" @click="handleCancelFavorite">
+              <uni-icons type="star-filled" color="" size="24"  />
+              收藏
+            </button>
+          </view>
         </div>
       </div>
     </div>
@@ -35,7 +46,7 @@
     <scroll-view class="comment-section scroll-y" :scroll-y="true" @scrolltolower="updateComments">
       <div class="comment-title">
         <div>评论区</div>
-        <button class="add-comment-btn" @click="handleAddComment">+</button>
+        <div class="add-comment-btn" @click="handleAddComment">+</div>
         <div v-if="showAddCommentPopup" class="add-comment-popup-overlay" @click="showAddCommentPopup = false">
           <div class="add-comment-popup-content" @click.stop>
             <div class="add-comment-popup-title">添加评论</div>
@@ -62,9 +73,9 @@
     <div class="favorite-popup-content" @click.stop>
       <div class="favorite-popup-title">收藏夹</div>
       <ul>
-        <li v-for="item in favoritesList" :key="item.favorites_id" class="favorite-item">
-          <span>{{ item.folder_name }}</span>
-          <button @click="handleAddToFavorite(item.favorites_id)">添加</button>
+        <li @click="handleAddToFavorite(item.directoryId)" v-for="item in favoritesList" :key="item.directoryId" class="favorite-item">
+          <span >{{ item.directoryName }}</span>
+
         </li>
       </ul>
       <div class="new-folder"><input type="text" v-model="newFavoriteName" placeholder="新建收藏夹" /> <button
@@ -96,6 +107,8 @@ const articleDetail = ref({
   description: '',
   file_url: '',
   tags: [],
+  status: 0,
+  isStar: false,
 });
 
 const commentList = ref([
@@ -120,16 +133,13 @@ const handleDownload = () => {
             console.log('savedFilePath:', savedFilePath);
 
             // 调用后端接口，记录下载行为
-            postDownload(savedFilePath, articleId.value, user_id);
+            postDownload(savedFilePath, articleId.value, user_id)
 
-            uni.showToast({
-              title: '下载成功',
-              icon: 'success',
-            });
+
           },
           fail: (err) => {
             uni.showToast({
-              title: '保存失败',
+              title: '下载失败',
               icon: 'error',
             });
           },
@@ -151,19 +161,31 @@ const postDownload = (filePath, articleId, userId) => {
     url: '/api/download/uploadDownloads', // 替换成你的后端接口地址
     method: 'POST',
     data: {
-      loacalpath: filePath,
+      localPath: filePath,
       materialId: articleId,
       userId: userId,
     },
     success: (res) => {
-      if (res.statusCode === 200 && res.data.code === 1) {
-        console.log('下载记录成功', res.data);
+      if (res) {
+        uni.showToast({
+          title: '下载成功,请前往我的下载查看',
+          icon: 'success',
+        });
       } else {
-        console.error('下载记录失败', res.data);
+        uni.showToast({
+
+          title: '下载失败',
+          icon: 'error',
+
+        })
       }
     },
     fail: (err) => {
       console.error('请求失败', err);
+      uni.showToast({
+
+        title: "请求失败"
+      })
     },
   });
 };
@@ -175,25 +197,25 @@ const handlePreview = () => {
   console.log(fileUrl);
 
   // 检查是否是PDF文件
-  if (fileUrl.endsWith('.pdf')) {
-    // 使用uni.previewImage预览PDF（某些平台可能支持）
-    uni.previewImage({
-      current: fileUrl, // 当前显示文件的链接
-      urls: [fileUrl] // 需要预览的文件http链接列表
-    });
-  } else if (fileUrl.endsWith('.docx') || fileUrl.endsWith('.doc')) {
-    // 对于Word文件，可能需要下载后在其他应用中打开
-    uni.showModal({
-      title: '预览文件',
-      content: '无法直接预览Word文档，是否下载文件？',
+  if (fileUrl) {
+
+    uni.downloadFile({
+      url: fileUrl,
       success: (res) => {
-        if (res.confirm) {
-          // 用户点击确定，进行下载操作
-          handleDownload();
-        } else if (res.cancel) {
-          // 用户点击取消，不进行任何操作
-          console.log('用户取消预览');
+        if (res.statusCode === 200) {
+          uni.openDocument({
+            filePath: res.tempFilePath,
+            success: (res) => {
+              console.log('打开文档成功');
+            },
+            fail: (err) => {
+              console.error('打开文档失败', err);
+            }
+          });
         }
+      },
+      fail: (err) => {
+        console.error('下载文件失败', err);
       }
     });
   } else {
@@ -211,27 +233,89 @@ const handleFavorite = () => {
 };
 
 const getFolders = async () => {
-  const res = await getMyFavorites({ favorites_id: 0, user_id: user_id, pageSize: 10, pageNumber: 1 });
+  uni.showLoading({
+    title: '加载中',
+
+  })
+  const res = await getMyFavorites({ favoritesId: 0, userId: user_id, pageSize: 10, pageNumber: 1 });
   if (res) {
-    favoritesList.value = res.data;
+    favoritesList.value = res.data.records;
+    uni.hideLoading();
     console.log(res);
 
   } else {
+
     console.log('获取收藏夹失败');
 
   }
 };
 
-const handleAddToFavorite = async (favorites_id: string) => {
-  const confirmed = window.confirm('确定要将文章添加到该收藏夹吗？');
+const handleAddToFavorite = async (favorites_id) => {
+
+  const confirmed = await new Promise((resolve, reject) => {
+    uni.showModal({
+      title: '提示',
+      content: '确定要将文章添加到该收藏夹吗？',
+      success: (res) => {
+        if (res.confirm) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      },
+      fail: () => {
+        reject(new Error('Modal show failed'));
+      }
+    });
+  });
+
   if (confirmed) {
-    const res = await postStar({ article_id: articleDetail.value.article_id, favorites_id });
-    if (res.code === 200) {
-      window.alert('添加成功');
+    // 用户点击了确定按钮
+    const res = await postStar({ article_id: Number(articleId.value), favorites_id, type: "star",user_id: user_id});
+    if (res.code === 1) {
+
+      uni.showToast({
+        title: '添加成功',
+        icon: 'success',
+        duration: 2000
+      });
       showFavoritePopup.value = false;
+      const detailres = await getArticleDetail(articleId.value, user_id);
+       if (detailres.code === 1) {
+        console.log(detailres.data);
+
+        articleDetail.value = detailres.data;
+
+        if (detailres.data.downloaded == 1) {
+          articleDetail.value.status = 3
+
+        }
+        else if (detailres.data.downloaded == 0 && detailres.data.limit == "downLoad") {
+          articleDetail.value.status = 1
+
+        }
+        else if (detailres.data.downloaded == 0 && detailres.data.limit == "read") {
+          articleDetail.value.status = 2
+        }
+        if (detailres.data.stared == 1) {
+          articleDetail.value.isStar = true;
+        } else {
+          articleDetail.value.isStar = false;
+        }
+      }
+
     } else {
-      window.alert('添加失败');
+      // 使用uni.showToast代替window.alert
+      uni.showToast({
+        title: '添加失败',
+        icon: 'none',
+        duration: 2000
+      });
     }
+  } else {
+    // 用户点击了取消按钮或关闭了模态框
+    // 在这里执行取消操作的逻辑，例如记录日志、更新状态等
+    console.log('用户取消了操作');
   }
 };
 const newFavoriteName = ref('');
@@ -240,24 +324,57 @@ const handleAddnewFavorite = async () => {
   if (newFavoriteName) {
     const res = await makeFavorites({ user_id: user_id, folder_name: newFavoriteName.value });
     if (res.code === 1) {
-      window.alert('创建成功');
+      uni.showToast({
+        title: '添加成功'
+
+      })
+      newFavoriteName.value = '';
       getFolders();
     }
   }
 };
 const articleId = ref(0);
 import { onLoad } from '@dcloudio/uni-app';
+import addViewHistory from '@/API/post/addViewHistory'
 onLoad(async (Option) => {// 获取路由传过来的文章ID
 
   articleId.value = Option.article_id;
-  console.log(articleId.value);
+
 
 
   try {
     updateComments();
-    const detailres = await getArticleDetail(articleId.value);
+    const detailres = await getArticleDetail(articleId.value, user_id);
     if (detailres.code === 1) {
+      console.log(detailres.data);
+
       articleDetail.value = detailres.data;
+
+      if (detailres.data.downloaded == 1) {
+        articleDetail.value.status = 3
+
+      }
+      else if (detailres.data.downloaded == 0 && detailres.data.limit == "downLoad") {
+        articleDetail.value.status = 1
+
+      }
+      else if (detailres.data.downloaded == 0 && detailres.data.limit == "read") {
+        articleDetail.value.status = 2
+      }
+      if (detailres.data.stared == 1) {
+        articleDetail.value.isStar = true;
+      } else {
+        articleDetail.value.isStar = false;
+      }
+
+
+
+      const addHistoryRes = await addViewHistory({ article_id: articleId.value, user_id: user_id });
+      if (addHistoryRes.code === 1) {
+        console.log('浏览记录添加成功');
+      } else {
+        console.log('浏览记录添加失败');
+      }
     } else {
 
     }
@@ -285,6 +402,7 @@ const handleAddComment = () => {
   showAddCommentPopup.value = true;
 }
 import postComment from '@/API/post/postComment';
+
 const handleSubmitComment = async () => {
   if (newCommentContent.value.trim() === '') {
     // window.alert('评论内容不能为空');
@@ -343,16 +461,49 @@ const transformTime = (timeArray: Array<number>) => {
   });
   return formattedDate;
 }
+
+
+const handleCancelFavorite = () => {
+  uni.showModal({
+    title: '取消收藏',
+    content: '确定要取消收藏这篇文章吗？',
+    success: (res) => {
+      if (res.confirm) {
+        // 用户点击了确定按钮
+        postStar({ article_id: Number(articleId.value), user_id: user_id , type: "cancel", favorites_id:0 }).then((res) => {
+          if (res.code === 1) {
+            articleDetail.value.isStar = false;
+            uni.showToast({
+              title: '取消收藏成功',
+              icon: 'success',
+              mask: true
+            })
+          } else {
+            uni.showToast(
+              {
+                title: '取消收藏失败',
+                icon: 'none',
+                mask: true
+              }
+            )
+          }
+        })
+      } else if (res.cancel) {
+        // 用户点击了取消按钮
+        console.log('用户点击了取消按钮');
+      }
+    }
+  })
+}
 </script>
 
 <style scoped>
 .article-container {
-  padding: 20rpx;
+  padding: 20px;
   background: linear-gradient(135deg, #f9f9f9, #ffffff);
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   max-width: 800px;
-
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -360,7 +511,6 @@ const transformTime = (timeArray: Array<number>) => {
 
 .article-header {
   margin-bottom: 30px;
-  height: 100px;
 }
 
 .title {
@@ -374,7 +524,9 @@ const transformTime = (timeArray: Array<number>) => {
   color: #888;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  justify-content: space-between;
+
+  gap: 10px;
 }
 
 .publish-time,
@@ -382,14 +534,17 @@ const transformTime = (timeArray: Array<number>) => {
   color: #999;
 }
 
-.article-content {
-  margin-bottom: 40px;
+.tag {
+  background-color: #e0e0e0;
+  padding: 5px 10px;
+  margin-right: 5px;
+  border-radius: 15px;
+  color: #4a90e2;
 }
 
-.desc {
-  font-size: 18px;
-  color: #444;
-  margin-bottom: 20px;
+.article-content {
+
+  margin-bottom: 40px;
 }
 
 .file {
@@ -398,53 +553,82 @@ const transformTime = (timeArray: Array<number>) => {
 
 .button-group {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   gap: 20px;
 }
 
+.primary-btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin: 10px 0px;
+}
 
+.primary-btn {
+  background-color: #4a90e2;
+  color: white;
+}
 
+.success-btn {
 
+  color: #222;
+}
+
+.warning-btn {
+
+  color: #222;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  padding: 0px 5px;
+}
+
+.primary-btn:hover,
+.success-btn:hover,
+.warning-btn:hover {
+  opacity: 0.8;
+}
 
 .comment-section {
-  margin-top: 30px;
+
   flex-grow: 1;
   overflow: auto;
-  border-top: #33333322 1px solid;
+  border-top: 1px solid #33333322;
   padding-top: 10px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-
 }
 
 .comment-title {
-  width: 100vw;
-  display: flex;
   font-size: 24px;
   font-weight: 600;
   color: #333;
   margin-bottom: 20px;
+  width: 100%;
+  display: flex;
   justify-content: space-between;
-
+  align-items: center;
 }
 
-.comment-title.add-comment-btn {
-  font-size: 16px;
-  padding: 10px;
-  border-radius: 50%;
+.add-comment-btn {
   background-color: #4a90e2;
+  height: 50px;
+  width: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: white;
+  border-radius: 50%;
+  margin-left: 10px;
   transition: background-color 0.3s ease;
 }
 
-.comment-title button:hover {
+.add-comment-btn:hover {
   background-color: #3578b6;
 }
-
-
-
 
 ul {
   list-style-type: none;
@@ -457,115 +641,22 @@ ul {
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.comment-item:hover {
-  background-color: #f7f7f7;
-}
-
-.favorite-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.favorite-popup-content {
-  width: 300px;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.favorite-popup-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.favorite-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  margin-bottom: 10px;
-  background-color: #f7f7f7;
-  border-radius: 8px;
-
-
-}
-
-.primary-btn {
-  width: fit-content;
-  font-size: 14px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  background-color: #4a90e2;
-  color: white;
   transition: background-color 0.3s ease;
 }
 
-.favorite-item button:hover {
-  background-color: #3578b6;
-}
-
-
-
-
-.favorite-popup-content button {
-  font-size: 14px;
-  padding: 10px 20px;
-  border-radius: 6px;
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-.favorite-popup-overlay .favorite-popup-content {
-  position: relative;
-}
-
-.favorite-popup-overlay .favorite-popup-content button.cancel-button {
-  background-color: #ff4d4f;
-}
-
-.favorite-popup-overlay .favorite-popup-content button.cancel-button:hover {
-  background-color: #e74c3c;
-}
-
-.comment-item .comment-content {
-  font-size: 16px;
-  color: #555;
-  max-width: 80%;
+.comment-item:hover {
+  background-color: #f7f7f7;
 }
 
 .comment-item .comment-meta {
-  font-size: 14px;
-  color: #999;
-  text-align: right;
+  color: #888;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.comment-item .username {
-  font-weight: bold;
-}
-
-.comment-item .time {
-  margin-left: 10px;
-}
-
-.comment-item:hover {
-  background-color: #f7f7f7;
-  border-radius: 8px;
-}
-
+.favorite-popup-overlay,
 .add-comment-popup-overlay {
   position: fixed;
   top: 0;
@@ -579,14 +670,16 @@ ul {
   z-index: 9999;
 }
 
+.favorite-popup-content,
 .add-comment-popup-content {
-  padding: 20px;
+  width: 300px;
+  padding: 10px;
   background-color: #fff;
   border-radius: 10px;
-  max-width: 400px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
+.favorite-popup-title,
 .add-comment-popup-title {
   font-size: 22px;
   font-weight: 600;
@@ -595,8 +688,28 @@ ul {
   text-align: center;
 }
 
+
+.comment-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f7f7f7;
+  border-radius: 8px;
+}
+
+.favorite-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  background-color: #f7f7f7;
+  border-bottom: 1px solid #ccc;
+
+}
+
 .comment-textarea {
-  width: 300px;
+
+  width: 250px;
   padding: 10px;
   margin-bottom: 15px;
   border-radius: 8px;
@@ -605,6 +718,28 @@ ul {
 
 .new-folder {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
 
+.new-folder input {
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+
+}
+
+.create-folder-btn {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 0px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.create-folder-btn:hover {
+  background-color: #3578b6;
 }
 </style>

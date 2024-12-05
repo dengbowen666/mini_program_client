@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 enum postStarApi {
-  postStarApi = '/api/favorites/postStar',
+  postStarApi = '/api/star/postStar',
 }
 const postStar = (data: any) => {
   return request({

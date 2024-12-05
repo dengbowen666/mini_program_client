@@ -23,36 +23,37 @@ interface historyItem {
   title: string
 }
 const ViewHistory = ref<historyItem[]>([
-  {
-    article_id: 1,
-    nickname: "用户A",
-    score: "90",
-    viewTime: "2024-11-01",
-    description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
-    title: "微积分"
-  },
-  {
-    article_id: 2,
-    nickname: "用户B",
-    score: "80",
-    viewTime: "2024-11-01",
-    description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
-    title: "微积分"
-  },
-  {
-    article_id: 3,
-    nickname: "用户C",
-    score: "70",
-    viewTime: "2024-11-01",
-    description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
-    title: "微积分"
-  },
+  // {
+  //   article_id: 1,
+  //   nickname: "用户A",
+  //   score: "90",
+  //   viewTime: "2024-11-01",
+  //   description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
+  //   title: "微积分"
+  // },
+  // {
+  //   article_id: 2,
+  //   nickname: "用户B",
+  //   score: "80",
+  //   viewTime: "2024-11-01",
+  //   description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
+  //   title: "微积分"
+  // },
+  // {
+  //   article_id: 3,
+  //   nickname: "用户C",
+  //   score: "70",
+  //   viewTime: "2024-11-01",
+  //   description: "这是一条描述信息打开大家卡夫卡萨凡纳卡",
+  //   title: "微积分"
+  // },
 
 
 ])
-const index = ref(0)
+const index = ref(1)
 onMounted(async () => {
-  ViewHistory.value = await getHistory()
+  const res = await getHistory()
+  ViewHistory.value = res.data.records
 });
 import { useUser } from '@/stores';
 const user = useUser()

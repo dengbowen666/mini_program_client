@@ -1,15 +1,15 @@
 <template>
   <view class="container">
     <view class="header">
-      <text> {{ starListSize }}张收藏夹</text>
+      <text> {{ starListSize||0 }}张收藏夹</text>
       <uni-icons type="arrowleft" size="20" @click="back"></uni-icons>
     </view>
     <view class="main">
-      <view class="star" v-for="item in starList" :key="item.favorites_id" @click="toStar(item.favorites_id)">
+      <view class="star" v-for="item in starList" :key="item" @click="toStar(item.directoryId)">
         <view class="star-content">
-          <view class="title">{{ item.folder_name }}</view>
+          <view class="title">{{ item.directoryName }}</view>
           <view class="details">
-            <view class="size">{{ item.article_size }}篇文章</view>
+            <view class="size">{{ item.articleSize }}篇文章</view>
             <view class="time">创建于：{{ item.created_time }}</view>
           </view>
         </view>
@@ -26,54 +26,27 @@ import { useUser } from '@/stores/modules/useUser';
 
 const { userProfile } = useUser();
 const { user_id } = userProfile;
-const starList = ref([{
-  favorites_id: '1',
-  folder_name: '技术文章',
-  article_size: 25,
-  created_time: '2023-01-15'
-},
-{
-  favorites_id: '2',
-  folder_name: '个人理财',
-  article_size: 15,
-  created_time: '2023-03-22'
-},
-{
-  favorites_id: '3',
-  folder_name: '旅游攻略',
-  article_size: 40,
-  created_time: '2023-05-01'
-},
-{
-  favorites_id: '4',
-  folder_name: '健康生活',
-  article_size: 30,
-  created_time: '2023-07-12'
-},
-{
-  favorites_id: '5',
-  folder_name: '美食食谱',
-  article_size: 50,
-  created_time: '2023-09-30'
-}]);
+const starList = ref([]);
 const pageNumber = ref(1);
 const pageSize = ref(10);
 const starListSize = ref(0);
 
 const getStarList = async (favorites_id: string) => {
   const res = await getMyFavorites({
-    user_id,
-    favorites_id: favorites_id,
+    userId:user_id,
+    favoritesId: 0,
     pageNumber: pageNumber.value,
     pageSize: pageSize.value
   });
+  console.log(res);
 
-  if (res.code === 200) {
-    starListSize.value = res.data.favorites_size;
-    starList.value.push(...res.data.favorites);
+
+  if (res.code === 1) {
+    starListSize.value = res.data.total;
+    starList.value.push(...res.data.records);
   } else {
     uni.showToast({
-      title: res.msg,
+      title: '错误',
       icon: 'error'
     });
   }

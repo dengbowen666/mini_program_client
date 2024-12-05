@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 enum addViewHistoryApi {
-  addViewHistoryApi = '/api/viewHistory/addViewHistory',
+  addViewHistoryApi = '/api/history/addViewHistory',
 }
 const addViewHistory = (data: any) => {
   return request({

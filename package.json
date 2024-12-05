@@ -1,9 +1,9 @@
 {
-  "name": "uni-app-xiaotuxian",
+  "name": "naerdouxue",
   "version": "0.0.0",
   "author": {
-    "name": "itheima",
-    "url": "https://web.itheima.com/"
+    "name": "dbw"
+
   },
   "scripts": {
     "dev:app": "uni -p app",

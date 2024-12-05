@@ -55,7 +55,7 @@ const signature = ref('')
 const avatar = ref('')
 const sex = ref('')
 const school = ref('')
-let userId=ref()
+let userId = ref()
 onMounted(() => {
   // 到达个人界面，就从userStore中获取用户信息
   loadUserProfile()
@@ -65,7 +65,7 @@ const loadUserProfile = () => {
   console.log(userStore.token);
 
   nickname.value = userStore.userProfile.nickname
-  signature.value = userStore.userProfile.signature
+  signature.value = userStore.userProfile.intro
   avatar.value = userStore.userProfile.avatar
   sex.value = userStore.userProfile.sex
   school.value = userStore.userProfile.school
@@ -75,20 +75,20 @@ const loadUserProfile = () => {
 const saveProfile = () => {
 
   const formData = {
-    userId: userId.value,
+    userId: Number(userId.value),
     nickname: nickname.value,
-    signature: signature.value,
+    intro: signature.value,
     sex: sex.value,
     school: school.value,
   }
   uni.uploadFile({
     url: 'http://47.108.183.218:8080/api/user/updateInfo', // 服务器接口地址
     filePath: avatar.value, // 头像文件路径
-    name: 'file',
+    name: 'avatar', // 文件字段名
     formData: formData,
     header: {
       'Content-Type': 'multipart/form-data',
-      authentication:  userStore.token,
+      authentication: userStore.token,
     },
     success: (res) => {
       // 上传成功后的处理
@@ -97,7 +97,7 @@ const saveProfile = () => {
         // 更新用户信息
         setProfile({
           nickname: nickname.value,
-          signature: signature.value,
+          intro: signature.value,
           avatar: avatar.value, // 可能需要使用服务器返回的URL
           sex: sex.value,
           school: school.value,

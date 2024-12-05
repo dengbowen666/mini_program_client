@@ -12,10 +12,16 @@
       <view class="addBtn" v-show="isAdd" @click="toggleAddTag">+</view>
       <input v-show="!isAdd" type="text" class="input-tag" v-model="tag" @confirm="addTag" />
     </view>
-    <text>文件上传：</text>
+    <text>文件上传：<text style="color: #007aff; font-size: 20rpx; margin-left: 10rpx;">(只允许上传一个word或pdf格式文件)</text></text>
     <view class="file-upload">
       <img @click="chooseFile" src="../../../static/images/upload.png" alt="">
     </view>
+    <view style="font-size: 24rpx; margin: 20rpx 10rpx 10rpx 0f7f7f7; color: #007aff" v-show="filename">{{ filename }}<uni-icons
+      @click="cancelFile()"
+      type="close"
+      color="black"
+      size="12"
+    /></view>
     <!-- 权限设置 -->
     <view class="limit">
       <text>权限设置：</text>
@@ -55,14 +61,24 @@ const activeRadio = ref('');
 const chang = (e) => {
   activeRadio.value = e.detail.value
 }
-
+const filename = ref('');
 const tempFilePath = ref('');
 const chooseFile = () => {
+  if (tempFilePath.value) {
+ uni.showToast({
+
+    title: '只能上传一个文件',
+    icon: 'none',
+    duration: 2000
+ })
+    return;
+  }
   uni.chooseMessageFile({
     count: 1,
     success: function (res) {
       tempFilePath.value = res.tempFiles[0].path; // 获取到的文件路径
-console.log(tempFilePath.value);
+      console.log(res);
+      filename.value = res.tempFiles[0].name; // 获取到的文件名
 
     }
   });
@@ -73,21 +89,96 @@ const post = async () => {
   const articleDetail = ref({ title: title.value, desc: desc.value, tags: tags.value.map(tag => tag.tagname), limit: activeRadio.value });
   //除非是用计算属性，不然articleDetail一开始就定了
   console.log(articleDetail.value);
+  if (checkArticleDetail(articleDetail.value) == 1) {
+    try {
+      const result = await postArticle(tempFilePath.value, articleDetail.value);
 
-  try {
-    const result = await postArticle(tempFilePath.value, articleDetail.value);
-    console.log(result);
+      uni.showToast({
+        title: '上传成功',
+        icon: 'success',
+        duration: 2000
+      })
+      uni.navigateTo({
+        url: '/pages/index/index'
+      })
+
+      console.log(result);
+    }
+    catch (error) {
+      console.error(error);
+    }
   }
-  catch (error) {
-    console.error(error);
+  else {
+    console.log('数据不完整');
   }
 }
+const checkArticleDetail = (articleDetail) => {
+  if (!articleDetail.title) {
+    uni.showToast({
+      title: '请输入标题',
+      icon: 'error',
+      duration: 2000
+    })
+    return 0;
+  }
+  if (!articleDetail.desc) {
+    uni.showToast({
+      title: '请输入描述',
+      icon: 'error',
+      duration: 2000
+    })
+    return 0;
+  }
+  if (!articleDetail.tags.length) {
+    uni.showToast({
+      title: '请输入标签',
+      icon: 'error',
+      duration: 2000
+    })
+    return 0;
+  }
+  if (!articleDetail.limit) {
+    uni.showToast({
+      title: '请选择权限',
+      icon: 'error',
+      duration: 2000
+    })
+    return 0;
+  }
+  if (!tempFilePath.value) {
+    uni.showToast({
+      title: '请选择文件',
+      icon: 'error',
+      duration: 2000
+    })
+    return 0;
+  }
+  return 1;
+
+}
+const cancelFile = () => {
+  // 提示是否要删除当前文件
+  uni.showModal({
+    title: '提示',
+    content: '确定要取消当前文件吗？',
+    success: function (res) {
+      if (res.confirm) {
+        tempFilePath.value = '';
+        filename.value = '';
+  }
+
+    }
+  });
+}
+
+
+
 </script>
 
 <style>
 .container {
   padding: 20rpx;
-  background-color: #46a9ba;
+  background-color: #ccc;
   min-height: 100vh;
 }
 
@@ -199,7 +290,9 @@ textarea {
   margin-top: 20rpx;
   margin-bottom: 20rpx;
 }
-
+.limit{
+  margin-top: 20rpx;
+}
 .limit radio-group {
   display: flex;
   margin-top: 20rpx;
@@ -210,4 +303,7 @@ textarea {
 .limit radio-label {
   margin-right: 20rpx;
 }
+
+
+
 </style>

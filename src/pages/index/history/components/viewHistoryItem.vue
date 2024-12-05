@@ -1,8 +1,9 @@
 <template>
-  <view class="history-item" @click="goArticleDetail(article_id)">
+  <view class="history-item" @click="goArticleDetail(materialId)">
     <view class="head">
-    <text class="history-item__title">{{ title }}</text>
-    <text class="history-item__time">{{ viewTime }}</text></view>
+      <text class="history-item__title">{{ title }}</text>
+      <text class="history-item__time">{{ timeStr }}</text>
+    </view>
     <view class="history-item_description">{{ description }}</view>
     <view class="history-item__foot">
       <text class="name">{{ nickname }}</text>
@@ -13,7 +14,7 @@
 
 <script setup lang="ts">
 import { goArticleDetail } from '@/hook/usegoArticleDetail';
-
+import transformTime from '@/utils/transformTime';
 // 接收props参数
 const props = defineProps({
   item: {
@@ -22,7 +23,8 @@ const props = defineProps({
   }
 })
 
-const { title, viewTime, description, nickname, score,article_id } = props.item
+const { title, time, description, nickname, score, materialId } = props.item
+const timeStr = transformTime(time)
 </script>
 
 <style scoped>
@@ -59,11 +61,13 @@ const { title, viewTime, description, nickname, score,article_id } = props.item
   margin-top: 6px;
   margin-bottom: 6px;
 }
-.head{
+
+.head {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .history-item__foot {
   display: flex;
   justify-content: start;
@@ -86,5 +90,4 @@ const { title, viewTime, description, nickname, score,article_id } = props.item
   color: #dd9746;
   font-size: 13px;
   font-weight: 500;
-}
-</style>
+}</style>

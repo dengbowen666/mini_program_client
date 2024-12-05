@@ -1,45 +1,36 @@
 <template>
-  <view>
-    <view v-for="(yearposts, year) in postsResult" :key="year">
-      <view class="year">{{ year }}年</view>
-      <view class="view-item" v-for="view in yearposts" :key="view.article_id">
-        <view class="left">
-          <view class="day">{{ view.viewDay }}</view>
-          <view class="month">{{ view.viewMonth }}月</view>
-
-        </view>
-        <view class="main " @click="goArticleDetail(view.article_id)">
-          <view class="title">{{ view.title }}</view>
-          <view class="description">{{ view.description }}</view>
-        </view>
-        <view class="right">
-
-
-          <view class="status" :class="statusClass(view.status)">{{ view.status }}</view>
-          <view class="set">
-
-            <view class="uni-list">
-              <view class="uni-list-cell">
-
-                <view class="uni-list-cell-db">
-                  <picker @change="bindPickerChange" :value="index" :range="array">
-                    <view class="uni-input">{{ array[index] }}</view>
-                  </picker>
-                </view>
+  <view v-for="(yearPosts, year) in postsResult" :key="year">
+    <view class="year">{{ year }}年</view>
+    <view class="view-item" v-for="(view, viewIndex) in yearPosts" :key="view.article_id">
+      <view class="left">
+        <view class="day">{{ view.postDay }}</view>
+        <view class="month">{{ view.postMonth }}月</view>
+      </view>
+      <view class="main" @click="goArticleDetail(view.id)">
+        <view class="title">{{ view.title }}</view>
+        <view class="description">{{ view.description }}</view>
+      </view>
+      <view class="right">
+        <view class="status" :class="statusClass(view.pending)">{{ view.pending }}</view>
+        <view class="set">
+          <view class="uni-list">
+            <view class="uni-list-cell">
+              <view class="uni-list-cell-db">
+                <picker mode="selector" @change="bindPickerChange(viewIndex, year, $event)"
+                  :value="array.findIndex((item) => item === view.competence)" :range="array">
+                  <view class="uni-input">{{ array.find((item) => item === view.competence) || '请选择' }}</view>
+                </picker>
               </view>
             </view>
-            <view @click="deleteAtc(view.article_id)" class="delete_btn">
-              <view> <uni-icons type="trash" color="" size="16" /></view>
-            </view>
-
           </view>
-          <!-- 其他文章信息 -->
+          <view @click="deleteAtc(view.id)" class="delete_btn">
+            <view><uni-icons type="trash" color="" size="16" /></view>
+          </view>
         </view>
       </view>
     </view>
   </view>
 </template>
-
 <script setup lang="ts">
 
 import { onMounted } from 'vue';
@@ -62,57 +53,53 @@ const posts = ref([{
   viewTime: '2024-04-01T10:00:00Z',
   title: '文章3'
 },
-{
-  article_id: '4',
-  viewTime: '2024-04-15T11:00:00Z',
-  title: '文章4'
-},
-{
-  article_id: '5',
-  viewTime: '2023-12-25T12:00:00Z',
-  title: '文章5'
-}]);
+]);
 const postsResult = ref({});
 import { useUser } from '@/stores/modules/useUser';
-import { storeToRefs } from 'pinia';
+
 import { getMyPublishedArticles } from '@/API/get/article/getMyPublishedArticles';
 const { userProfile } = useUser();
 const { user_id } = userProfile;
-const getposts = async () => {
-  console.log(userProfile);
-
-  const res = await getMyPublishedArticles(
-    {
-      sort:'time',
-      userId: user_id,
-      page: pageNumber.value,
-      pageSize: 10
-    }
-  );
+async function getPosts() {
+  postsResult.value = {};
+  const res = await getMyPublishedArticles({
+    sort: 'time',
+    userId: user_id,
+    page: pageNumber.value,
+    pageSize: 10
+  });
   if (res.code == 1) {
-    posts.value = res.data.articles
 
-
+    groupByYear(res.data.records);
   } else {
     wx.showToast({
       title: res.msg,
       icon: 'error',
       duration: 2000
-    })
-
+    });
   }
-  groupByYear(posts.value);
 }
-
 // 分组函数
 function groupByYear(articles: object[]) {
+
   for (const article of articles) {
-    const date = new Date(article.viewTime);
+    const uploadTime = article.uploadTime;
+    // 提取年、月、日、小时、分钟、秒
+    const y = uploadTime[0];
+    const m = uploadTime[1].toString().padStart(2, '0'); // 确保月份是两位数
+    const d = uploadTime[2].toString().padStart(2, '0'); // 确保日期是两位数
+    const hours = uploadTime[3].toString().padStart(2, '0'); // 确保小时是两位数
+    const minutes = uploadTime[4].toString().padStart(2, '0'); // 确保分钟是两位数
+    const seconds = uploadTime[5].toString().padStart(2, '0'); // 确保秒是两位数
+
+    // 格式化为YYYY-MM-DDTHH:mm:ssZ格式
+    const formattedTime = `${y}-${m}-${d}T${hours}:${minutes}:${seconds}Z`;
+    const date = new Date(formattedTime);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    article.viewMonth = convertToChineseNumber(month); // 确保月份是两位数
-    article.viewDay = day.toString().padStart(2, "0")
+    article.postMonth = convertToChineseNumber(month); // 确保月份是两位数
+    article.postDay = day.toString().padStart(2, "0")
     // 确保日期是两位数
     if (!postsResult.value[year]) {
       postsResult.value[year] = []; // 修正这里，确保是通过.value访问和修改ref的值
@@ -129,7 +116,7 @@ function convertToChineseNumber(num: number) {
 const pageNumber = ref(1);
 // 调用获取视图历史的函数
 onMounted(() => {
-  getposts();
+  getPosts();
 });
 // uni.onReachBottom(() => {
 //  pageNumber.value++
@@ -137,41 +124,85 @@ onMounted(() => {
 // })
 const index = ref(0);
 const array = ['仅阅读', '可下载'];
-function bindPickerChange(e) {
-
-  index.value = e.detail.value
+function bindPickerChange(viewIndex, year, e) {
+  const newCompetence = array[e.detail.value];
+  const yearPosts = postsResult.value[year];
+  const view = yearPosts[viewIndex];
+  view.competence = newCompetence;
+  // 保存到后端
+  update(view.id, newCompetence);
 }
+import { changeCompetence } from '@/API/get/article/changeCompetence'
+async function update(articleId, competence) {
+  try {
+    const res = await changeCompetence(articleId, competence);
+    if (res.code === 1) {
+      // 更新成功
+      wx.showToast({
+        title: '更新成功',
+        icon: 'success',
+        duration: 2000
+      });
+    } else {
+      // 更新失败
+      wx.showToast({
+        title: res.msg,
+        icon: 'error',
+        duration: 2000
+      });
+    }
+  } catch (err) {
+    // 处理错误
+    wx.showToast({
+      title: '更新失败',
+      icon: 'error',
+      duration: 2000
+    });
+  }
+}
+
 import deleteArticle from '@/API/post/deleteArticle'
 import { goArticleDetail } from '@/hook/usegoArticleDetail';
 const deleteAtc = (article_id: string) => {
-
-  //删除文章
-  deleteArticle({
-    article_id: article_id,
-    user_article_id: user_id,
-  }).then((res) => {
-    wx.showToast({
-      title: '删除成功',
-      icon: 'success',
-      duration: 2000
-    })
-    // 删除成功后刷新页面
-    getposts();
-  }).catch((err) => {
-    wx.showToast({
-      title: '删除失败',
-      icon: 'error',
-      duration: 2000
-    })
+  // 确认是否删除提示
+  uni.showModal({
+    title: '提示',
+    content: '确定要删除这篇文章吗？',
+    success(res) {
+      if (res.confirm) {
+        // 调用删除文章的API
+        //删除文章
+        deleteArticle({
+          articleId: article_id,
+          userId: user_id,
+        }).then((res) => {
+          wx.showToast({
+            title: '删除成功',
+            icon: 'success',
+            duration: 2000
+          })
+          // 删除成功后刷新页面
+          getPosts();
+        }).catch((err) => {
+          wx.showToast({
+            title: '删除失败',
+            icon: 'error',
+            duration: 2000
+          })
+        })
+      } else if (res.cancel) {
+        console.log('用户点击取消')
+      }
+    }
   })
-
-
 }
-const statusClass = (status) => {
-  switch (status) {
+
+
+const statusClass = (pending) => {
+  switch (pending) {
     case '已发布':
       return 'status-published';
-    case '审核中':
+    case '待审核':
       return 'status-pending';
     case '未通过':
       return 'status-rejected';
@@ -240,7 +271,7 @@ const statusClass = (status) => {
 
 .right {
 
-  width: 200rpx;
+  width: 240rpx;
   height: 20px;
   display: flex;
   justify-content: center;
@@ -285,18 +316,14 @@ const statusClass = (status) => {
   color: #f56c6c;
 }
 
-.status-published {
-  background-color: #e0f9d7;
-  color: #67c23a;
-}
+.uni-input {
 
-.status-pending {
-  background-color: #f9e3a2;
-  color: #faad14;
-}
-
-.status-rejected {
-  background-color: #fde2e2;
-  color: #f56c6c;
+  height: 100%;
+  color: #333;
+  background: #67c23a;
+  padding: 0px 5px;
+  border-radius: 5px;
+  margin: 0px 5px;
+  font-size: 10px;
 }
 </style>

@@ -12,7 +12,7 @@ export const useUser = defineStore(
       avatar: '',
       school: '',
       sex: '',
-      signature: '',
+      intro: '',
       user_id: ''
     })
 

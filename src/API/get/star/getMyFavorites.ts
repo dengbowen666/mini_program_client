@@ -4,7 +4,7 @@ const getMyFavorites = (params: any) => {
   return request({
     url: '/api/star/getMyStars',
     method: 'get',
-    params: params,
+    data:params
   })
 }
 
