@@ -18,7 +18,7 @@
               <view class="uni-list-cell-db">
                 <picker mode="selector" @change="bindPickerChange(viewIndex, year, $event)"
                   :value="array.findIndex((item) => item === view.competence)" :range="array">
-                  <view class="uni-input">{{ array.find((item) => item === view.competence) || '请选择' }}</view>
+                  <view class="uni-input">{{ array.find((item) => item === view.competence) }}</view>
                 </picker>
               </view>
             </view>
@@ -123,7 +123,7 @@ onMounted(() => {
 //   getposts();
 // })
 const index = ref(0);
-const array = ['仅阅读', '可下载'];
+const array = ['仅查看', '可下载'];
 function bindPickerChange(viewIndex, year, e) {
   const newCompetence = array[e.detail.value];
   const yearPosts = postsResult.value[year];

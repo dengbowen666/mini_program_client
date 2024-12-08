@@ -59,9 +59,9 @@ function wechatLogin() {
         login({
           code: code,
         }).then(res => {
-           uni.switchTab({
+          uni.switchTab({
             url: '/pages/index/index',
-         })
+          })
           console.log(res);
 
           if (res.code === 1) {
@@ -71,7 +71,7 @@ function wechatLogin() {
             setToken.value(res.data.token)
 
 
-//这里token输出变化了，但是user_id没有变化，是因为token保持了对象的引用，而user_id是获取了就定死的，所以不会变化
+            //这里token输出变化了，但是user_id没有变化，是因为token保持了对象的引用，而user_id是获取了就定死的，所以不会变化
             uni.switchTab({
               url: '/pages/index/index',
             })

@@ -9,8 +9,12 @@
       </view>
       <view class="description">
         <text>{{ item.description }}</text>
-        <text class="operate" @click="cancelStar(item.articleId)">取消收藏</text>
+        <text class="operate" @click.stop="cancelStar(item.articleId)">取消收藏</text>
       </view>
+    </view>
+    <view class="empty" v-if="articles.length === 0">
+
+      <text>空空如也</text>
     </view>
   </view>
 </template>
@@ -50,24 +54,50 @@ const getFavoriteArticles = async (type) => {
 
 }
 import postStar from '@/API/post/favorites/postStar';
+import pubsub from 'pubsub-js';
 const cancelStar = async (articleId) => {
-  postStar({
-    article_id: articleId, favorites_id: favorites_id.value, type: "cancel", user_id: user_id
-  }).then((res) => {
-    if (res.code === 1) {
-      uni.showToast({
-        // 删除成功
-        title: '取消收藏成功',
-        icon: 'success',
-        duration: 2000
-      })
-      getFavoriteArticles('init')
+  uni.showModal({
+    title: '提示',
+    content: '确定取消收藏吗？',
+    success: (res) => {
+      if (res.confirm) {
+        postStar({
+          article_id: articleId, favorites_id: favorites_id.value, type: "cancel", user_id: user_id
+        }).then((res) => {
+          if (res.code === 1) {
+            uni.showToast({
+              // 删除成功
+              title: '取消收藏成功',
+              icon: 'success',
+              duration: 2000
+            })
+            getFavoriteArticles('init')
+            pubsub.publish('updateFavorites')
 
+          }
+          else {
+
+            uni.showToast({
+              // 删除失败
+              title: '取消收藏失败',
+              icon: 'error',
+              duration: 2000
+            })
+          }
+
+        })
+
+
+      } else if (res.cancel) {
+        console.log('用户点击取消');
+      }
     }
-
-  })
-
+      }
+  )
 }
+
+
+
 </script>
 
 <style>
@@ -92,7 +122,19 @@ const cancelStar = async (articleId) => {
 
   color: #fff;
   background: skyblue;
-  padding: 5px;
-  border-radius: 5px
+  border-radius: 5px;
+  padding: 5px 10px;
+
+  z-index: 999;
+}
+
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: bold;
+  color: #666;
 }
 </style>

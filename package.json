@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "author": {
     "name": "dbw"
-
   },
   "scripts": {
     "dev:app": "uni -p app",
@@ -68,6 +67,7 @@
     "flyio": "^0.6.14",
     "pinia": "2.0.27",
     "pinia-plugin-persistedstate": "^3.2.0",
+    "pubsub-js": "^1.9.5",
     "vue": "^3.2.47",
     "vue-i18n": "^9.2.2"
   },

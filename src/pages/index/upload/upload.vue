@@ -1,27 +1,23 @@
 <template>
   <view class="container">
-    <input type="text" class="input" placeholder="请输入完整标题(5-20字)" v-model="title" />
+    <input type="text" class="input" placeholder="请输入完整标题(1-20字)" v-model="title" />
     <view class="uni-padding-wrap">
-      <textarea placeholder="请输入内容" rows="3" v-model="desc"></textarea>
+      <textarea placeholder="请输入描述(50字以内)" rows="4" v-model="desc"></textarea>
     </view>
 
     <view class="tags-container">
       <text>标签：</text>
       <view v-for="tag in tags" :key="tag" class="tag" @click="tag.isDel = true">{{ tag.tagname }}<text v-show="tag.isDel"
           class="delete" @click="tags.splice(tags.indexOf(tag), 1)">x</text></view>
-      <view class="addBtn" v-show="isAdd" @click="toggleAddTag">+</view>
+      <view class="addBtn" v-show="isAdd && tags.length < 3" @click="toggleAddTag">+</view>
       <input v-show="!isAdd" type="text" class="input-tag" v-model="tag" @confirm="addTag" />
     </view>
     <text>文件上传：<text style="color: #007aff; font-size: 20rpx; margin-left: 10rpx;">(只允许上传一个word或pdf格式文件)</text></text>
     <view class="file-upload">
       <img @click="chooseFile" src="../../../static/images/upload.png" alt="">
     </view>
-    <view style="font-size: 24rpx; margin: 20rpx 10rpx 10rpx 0f7f7f7; color: #007aff" v-show="filename">{{ filename }}<uni-icons
-      @click="cancelFile()"
-      type="close"
-      color="black"
-      size="12"
-    /></view>
+    <view style="font-size: 24rpx; margin: 20rpx 10rpx 10rpx 0f7f7f7; color: #007aff" v-show="filename">{{ filename
+    }}<uni-icons @click="cancelFile()" type="close" color="black" size="12" /></view>
     <!-- 权限设置 -->
     <view class="limit">
       <text>权限设置：</text>
@@ -48,6 +44,28 @@ const tag = ref('');
 
 const addTag = () => {
   if (tag.value.trim()) {
+    if (tag.value.length > 5) {
+      uni.showToast({
+
+        title: '标签长度≤5字',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    if (tags.value.some(item => item.tagname === tag.value)) {
+      uni.showToast({
+
+        title: '标签已存在',
+        icon: 'none',
+        duration: 2000
+      })
+      tag.value = '';
+      return
+    }
+
+
+
     tags.value.push({ tagname: tag.value, isDel: false });
     tag.value = '';
     isAdd.value = true;
@@ -65,17 +83,27 @@ const filename = ref('');
 const tempFilePath = ref('');
 const chooseFile = () => {
   if (tempFilePath.value) {
- uni.showToast({
+    uni.showToast({
 
-    title: '只能上传一个文件',
-    icon: 'none',
-    duration: 2000
- })
+      title: '只能上传一个文件',
+      icon: 'none',
+      duration: 2000
+    })
     return;
   }
   uni.chooseMessageFile({
     count: 1,
     success: function (res) {
+      // 判断文件后缀，只能是pdf,word
+      const fileExt = res.tempFiles[0].name.split('.').pop().toLowerCase();
+      if (fileExt !== 'pdf' && fileExt !== 'doc' && fileExt !== 'docx') {
+        uni.showToast({
+          title: '只能上传pdf或word文件',
+          icon: 'none',
+          duration: 2000
+        })
+        return;
+      }
       tempFilePath.value = res.tempFiles[0].path; // 获取到的文件路径
       console.log(res);
       filename.value = res.tempFiles[0].name; // 获取到的文件名
@@ -84,8 +112,36 @@ const chooseFile = () => {
   });
 }
 
+
 import postArticle from '@/API/post/postArticle'
 const post = async () => {
+  if (title.value.length < 1 || title.value.length > 20) {
+    uni.showToast({
+      title: '标题长度为1-20字',
+      icon: 'error',
+      duration: 2000
+    })
+    return
+  }
+  if (desc.value.length > 50) {
+    uni.showToast({
+      title: '描述长度≤50字',
+      icon: 'error',
+      duration: 2000
+    })
+    return
+  }
+  if (tags.value.length > 3) {
+
+    uni.showToast({
+      title: '标签最多3个',
+      icon: 'error',
+      duration: 2000
+    })
+    return
+  }
+
+
   const articleDetail = ref({ title: title.value, desc: desc.value, tags: tags.value.map(tag => tag.tagname), limit: activeRadio.value });
   //除非是用计算属性，不然articleDetail一开始就定了
   console.log(articleDetail.value);
@@ -98,6 +154,14 @@ const post = async () => {
         icon: 'success',
         duration: 2000
       })
+      // 清空
+      title.value = '';
+      desc.value = '';
+      tags.value = [];
+      tag.value = '';
+      activeRadio.value = '';
+      tempFilePath.value = '';
+      filename.value = '';
       uni.navigateTo({
         url: '/pages/index/index'
       })
@@ -105,7 +169,11 @@ const post = async () => {
       console.log(result);
     }
     catch (error) {
-      console.error(error);
+      uni.showToast({
+        title: '上传失败',
+        icon: 'error',
+        duration: 2000
+      })
     }
   }
   else {
@@ -165,7 +233,7 @@ const cancelFile = () => {
       if (res.confirm) {
         tempFilePath.value = '';
         filename.value = '';
-  }
+      }
 
     }
   });
@@ -290,9 +358,11 @@ textarea {
   margin-top: 20rpx;
   margin-bottom: 20rpx;
 }
-.limit{
+
+.limit {
   margin-top: 20rpx;
 }
+
 .limit radio-group {
   display: flex;
   margin-top: 20rpx;
@@ -303,7 +373,4 @@ textarea {
 .limit radio-label {
   margin-right: 20rpx;
 }
-
-
-
 </style>

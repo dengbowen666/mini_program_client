@@ -8,7 +8,8 @@
         </p>
 
         <p>
-          <span class="author-name">作者：{{ articleDetail.author.name }}<view>{{ articleDetail.author.avatar }} </view>
+          <span class="author-name">作者：{{ articleDetail.author.name }} 来自于：
+
 
 
 
@@ -35,7 +36,7 @@
             <button v-if="!articleDetail.isStar" class="warning-btn operate" @click="handleFavorite">
               <uni-icons type="star" color="" size="24" /> 收藏</button>
             <button v-else class="warning-btn operate" @click="handleCancelFavorite">
-              <uni-icons type="star-filled" color="" size="24"  />
+              <uni-icons type="star-filled" color="" size="24" />
               收藏
             </button>
           </view>
@@ -73,8 +74,9 @@
     <div class="favorite-popup-content" @click.stop>
       <div class="favorite-popup-title">收藏夹</div>
       <ul>
-        <li @click="handleAddToFavorite(item.directoryId)" v-for="item in favoritesList" :key="item.directoryId" class="favorite-item">
-          <span >{{ item.directoryName }}</span>
+        <li @click="handleAddToFavorite(item.directoryId)" v-for="item in favoritesList" :key="item.directoryId"
+          class="favorite-item">
+          <span>{{ item.directoryName }}</span>
 
         </li>
       </ul>
@@ -168,7 +170,7 @@ const postDownload = (filePath, articleId, userId) => {
     success: (res) => {
       if (res) {
         uni.showToast({
-          title: '下载成功,请前往我的下载查看',
+          title: '下载成功',
           icon: 'success',
         });
       } else {
@@ -178,14 +180,16 @@ const postDownload = (filePath, articleId, userId) => {
           icon: 'error',
 
         })
+
       }
     },
     fail: (err) => {
       console.error('请求失败', err);
-      uni.showToast({
-
-        title: "请求失败"
-      })
+      uni.showModal({
+        title: '提示',
+        content: '文件下载失败，请稍后再试',
+        showCancel: false,
+      });
     },
   });
 };
@@ -215,6 +219,11 @@ const handlePreview = () => {
         }
       },
       fail: (err) => {
+        uni.showModal({
+          title: '提示',
+          content: '文件预览失败，请稍后重试',
+          showCancel: false,
+        });
         console.error('下载文件失败', err);
       }
     });
@@ -271,7 +280,7 @@ const handleAddToFavorite = async (favorites_id) => {
 
   if (confirmed) {
     // 用户点击了确定按钮
-    const res = await postStar({ article_id: Number(articleId.value), favorites_id, type: "star",user_id: user_id});
+    const res = await postStar({ article_id: Number(articleId.value), favorites_id, type: "star", user_id: user_id });
     if (res.code === 1) {
 
       uni.showToast({
@@ -281,7 +290,7 @@ const handleAddToFavorite = async (favorites_id) => {
       });
       showFavoritePopup.value = false;
       const detailres = await getArticleDetail(articleId.value, user_id);
-       if (detailres.code === 1) {
+      if (detailres.code === 1) {
         console.log(detailres.data);
 
         articleDetail.value = detailres.data;
@@ -321,7 +330,14 @@ const handleAddToFavorite = async (favorites_id) => {
 const newFavoriteName = ref('');
 const handleAddnewFavorite = async () => {
 
-  if (newFavoriteName) {
+  if (newFavoriteName.value != '') {
+    if (newFavoriteName.value.length > 10) {
+      uni.showToast({
+        title: '收藏夹名称≤10字',
+        icon: 'none'
+      })
+      return
+    }
     const res = await makeFavorites({ user_id: user_id, folder_name: newFavoriteName.value });
     if (res.code === 1) {
       uni.showToast({
@@ -331,6 +347,13 @@ const handleAddnewFavorite = async () => {
       newFavoriteName.value = '';
       getFolders();
     }
+  }
+  else {
+    uni.showToast({
+      title: '请输入收藏夹名称',
+      icon: 'none'
+
+    })
   }
 };
 const articleId = ref(0);
@@ -470,7 +493,7 @@ const handleCancelFavorite = () => {
     success: (res) => {
       if (res.confirm) {
         // 用户点击了确定按钮
-        postStar({ article_id: Number(articleId.value), user_id: user_id , type: "cancel", favorites_id:0 }).then((res) => {
+        postStar({ article_id: Number(articleId.value), user_id: user_id, type: "cancel", favorites_id: 0 }).then((res) => {
           if (res.code === 1) {
             articleDetail.value.isStar = false;
             uni.showToast({

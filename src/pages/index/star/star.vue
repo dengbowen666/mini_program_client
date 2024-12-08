@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="header">
-      <text> {{ starListSize||0 }}张收藏夹</text>
+      <text> {{ starListSize || 0 }}张收藏夹</text>
       <uni-icons type="arrowleft" size="20" @click="back"></uni-icons>
     </view>
     <view class="main">
@@ -10,7 +10,7 @@
           <view class="title">{{ item.directoryName }}</view>
           <view class="details">
             <view class="size">{{ item.articleSize }}篇文章</view>
-            <view class="time">创建于：{{ item.created_time }}</view>
+            <!-- <view class="time">创建于：{{ item.created_time }}</view> -->
           </view>
         </view>
       </view>
@@ -20,9 +20,10 @@
 </template>
 
 <script setup lang="ts">
-import  getMyFavorites  from '@/API/get/star/getMyFavorites';
+import getMyFavorites from '@/API/get/star/getMyFavorites';
 import { ref, onMounted } from 'vue';
 import { useUser } from '@/stores/modules/useUser';
+import pubsub from 'pubsub-js';
 
 const { userProfile } = useUser();
 const { user_id } = userProfile;
@@ -33,7 +34,7 @@ const starListSize = ref(0);
 
 const getStarList = async (favorites_id: string) => {
   const res = await getMyFavorites({
-    userId:user_id,
+    userId: user_id,
     favoritesId: 0,
     pageNumber: pageNumber.value,
     pageSize: pageSize.value
@@ -58,14 +59,14 @@ const toStar = (favorites_id: string) => {
   });
 };
 
-// uni.onReachBottom(() => {
-//   pageNumber.value++;
-//   getStarList('');
-// });
+pubsub.subscribe('updateFavorites', () => {
+  getStarList('');
+})
 
 onMounted(() => {
   getStarList('');
 });
+
 
 const back = () => {
   uni.navigateBack();

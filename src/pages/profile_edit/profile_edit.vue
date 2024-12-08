@@ -30,7 +30,14 @@
       <view class="infoItem">
         <view class="infoItemLeft">性别</view>
         <view class="infoItemRight">
-          <input type="text" v-model="sex" :placeholder="sex" class="input">
+          <!-- <input type="text" v-model="sex" :placeholder="sex" class="input"> -->
+          <!-- 下拉框男女 -->
+          <picker mode="selector" :range="['男', '女']" @change="sexChange">
+
+            {{ sex }}
+
+          </picker>
+
         </view>
       </view>
 
@@ -48,7 +55,7 @@
 
 import { useUser } from '@/stores/modules/useUser'
 const userStore = useUser()
-const { setProfile, userProfile } = userStore
+const { setProfile, userProfile,setUserId } = userStore
 import { ref, reactive, onMounted } from 'vue'
 const nickname = ref('')
 const signature = ref('')
@@ -61,6 +68,14 @@ onMounted(() => {
   loadUserProfile()
 
 })
+
+const sexChange = (e) => {
+  // e.detail.value 是数组中的索引，我们需要根据索引来设置 sex.value
+  sex.value = e.detail.value === '0' ? '男' : '女';
+};
+
+
+
 const loadUserProfile = () => {
   console.log(userStore.token);
 
@@ -73,7 +88,36 @@ const loadUserProfile = () => {
 }
 
 const saveProfile = () => {
+  // 检验输入是否都有数据
+  if (!nickname.value || !avatar.value || !sex.value || !school.value) {
+    wx.showToast({
+      title: '请填写完整信息',
+      icon: 'none'
+    });
+    return;
+  }
 
+  if (nickname.value.length > 10) {
+    wx.showToast({
+      title: '昵称长度不能超过10个字符',
+      icon: 'none'
+    });
+    return;
+  }
+  if (signature.value.length > 50) {
+    wx.showToast({
+      title: '个性签名长度不能超过50个字符',
+      icon: 'none'
+    });
+    return
+  }
+  if (nickname.value.length > 6) {
+    wx.showToast({
+      title: '昵称长度不能超过6个字符',
+      icon: 'none'
+    });
+    return
+  }
   const formData = {
     userId: Number(userId.value),
     nickname: nickname.value,
@@ -101,7 +145,11 @@ const saveProfile = () => {
           avatar: avatar.value, // 可能需要使用服务器返回的URL
           sex: sex.value,
           school: school.value,
+
         });
+        console.log(userId.value);
+
+        setUserId(Number(userId.value))
         wx.showToast({
           title: '保存成功',
           icon: 'success',
@@ -137,6 +185,15 @@ const chooseAvatar = () => {
       // res.tempFilePaths 是选择的图片的本地文件路径数组
       if (res.tempFilePaths.length > 0) {
         avatar.value = res.tempFilePaths[0]; // 设置头像的本地路径
+        //检查文件后缀名是否为jpg、jpeg、png、gif
+        const fileExt = avatar.value.split('.').pop().toLowerCase();
+        if (fileExt !== 'jpg' && fileExt !== 'jpeg' && fileExt !== 'png' && fileExt !== 'gif') {
+          wx.showToast({
+            title: '请上传jpg、jpeg、png，gif格式的图片',
+            icon: 'none'
+          });
+          return;
+        }
         console.log('选择的头像路径：', res.tempFilePaths[0]);
       }
     }

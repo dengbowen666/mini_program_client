@@ -73,7 +73,13 @@ const search = async (keyword: string) => {
     })
     return
   }
-
+  if (keyword.length > 10) {
+    uni.showToast({
+      title: '关键词长度不能超过10个字',
+      icon: 'none'
+    })
+    return
+  }
   index.value = 1
   uni.showLoading({
     title: '加载中',
@@ -84,10 +90,10 @@ const search = async (keyword: string) => {
     const res = await getArticles({
       type: 'search',
       keyword: keyword,
-      page: index.value,
+      pageNumber: index.value,
       pageSize: 10,
       sort: 'time',
-      userId: user_id
+      userId: Number(user_id)
     })
     await addSearchHistory(Number(user_id), keyword)
     uni.hideLoading()
@@ -118,7 +124,7 @@ const updateResults = async () => {
     keyword: keyword.value,
     pageNumber: index.value,
     pageSize: 10,
-    userId: user_id
+    userId: Number(user_id)
   })
   if (res.code === 1) {
     searchResult.value = [...searchResult.value, ...res.data]
@@ -127,7 +133,7 @@ const updateResults = async () => {
 watch(() => keyword.value, () => {
   if (keyword.value.trim().length === 0) {
     getSearchHistory({
-      userId: user_id,
+      userId: Number(user_id)
     }).then(res => {
       if (res.code === 1) {
         const result = res.data.map((item: any) => item.keyword)
@@ -165,7 +171,7 @@ const clearHistory = () => {
               userId: user_id,
             }).then(res => {
               if (res.code === 1)
-              historyResult.value=res.data.map((item: any) => item.keyword)
+                historyResult.value = res.data.map((item: any) => item.keyword)
             })
           }
           else {

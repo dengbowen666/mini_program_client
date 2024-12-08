@@ -6,12 +6,13 @@
       <input placeholder="请输入关键词" class="input" @click="goSearch" />
     </view>
     <view class="announcementDetailContainer" v-show="isShowAnnouncement" @click.stop="isShowAnnouncement = false">
-    <view class="announcementDetail">
-    {{ announcementDetail }}
-    </view>
+      <view class="announcementDetail">
+        {{ announcementDetail }}
+      </view>
     </view>
     <ul class="notice">
-      <announcement v-for="item in announcements" :key="item" :title="item.title" @showAnnouncement="showAnnouncement(item)"></announcement>
+      <announcement v-for="item in announcements" :key="item" :title="item.title"
+        @showAnnouncement="showAnnouncement(item)"></announcement>
     </ul>
 
     <ul class="nav">
@@ -45,7 +46,7 @@ import { getArticles } from '@/API/get/article/getArticles'
 
 import { useUser } from '@/stores/modules/useUser'
 import addSearchHistory from '@/API/post/history/addSearchHistory'
-const userId= useUser().userProfile.user_id
+
 const goSearch = () => {
   uni.navigateTo({
     url: '/pages/index/find/search/search'
@@ -61,7 +62,7 @@ const getNavArticles = async (itemType: string) => {
   //  reset()
   activeIndex.value = navItems.value.findIndex(item => item.type
     === itemType)
-    console.log(activeIndex.value);
+  console.log(activeIndex.value);
 
   navItem.value = itemType
   const res = await getArticles({
@@ -69,8 +70,8 @@ const getNavArticles = async (itemType: string) => {
     navName: navItem.value,
     sort: sort.value,
     pageSize: 10,
-    page: 1,
-    userId:userId
+    pageNumber: 1,
+    userId: useUser().userProfile.user_id
   })
   if (res.code === 1) {
     console.log(res.data)
@@ -95,15 +96,7 @@ onMounted(() => {
   getAnnouncementList();
 });
 const posts = ref([
-  { id: 1, title: '微积分速通手册', time: '2024-10-28', popularity: 100000, des: '帮助大一新生速通微积分', tag: ['高数', '大一'] },
-  { id: 2, title: '线性代数核心概念', time: '2024-10-27', popularity: 95000, des: '掌握线性代数的核心理论与应用', tag: ['数学', '线性代数'] },
-  { id: 3, title: '大学物理实验指南', time: '2024-10-26', popularity: 120000, des: '实验步骤详解与数据分析', tag: ['物理', '实验'] },
-  { id: 4, title: '计算机科学入门', time: '2024-10-25', popularity: 80000, des: '从基础到进阶的计算机科学知识', tag: ['计算机', '编程入门'] },
-  { id: 5, title: '英语四六级备考资料', time: '2024-10-24', popularity: 150000, des: '全面的英语四六级备考资料与技巧', tag: ['英语', '四六级'] },
-  { id: 6, title: '宏观经济学与微观经济学', time: '2024-10-23', popularity: 90000, des: '经济学原理与实际案例分析', tag: ['经济', '经济学原理'] },
-  { id: 7, title: '有机化学实验技巧', time: '2024-10-22', popularity: 130000, des: '有机化学实验操作技巧与安全指南', tag: ['化学', '实验技巧'] },
-  { id: 8, title: '心理学基础', time: '2024-10-21', popularity: 75000, des: '探索心理学的基本概念和理论', tag: ['心理学', '基础'] },
-  // 你可以在这里添加更多的帖子对象
+
 ])
 const index = ref(0)
 const array = ref(['time', 'heat'])
@@ -131,7 +124,7 @@ const updatePosts = async () => {
     sort: sort.value,
     pageSize: 10,
     pageNumber: page.value,
-    userId:userId
+    userId: useUser().userProfile.user_id
   });
 
   if (res.code === 1) {
@@ -141,8 +134,8 @@ const updatePosts = async () => {
 }
 const isShowAnnouncement = ref(false)
 const announcementDetail = ref({})
-import {getAnnouncementDetail} from '@/API/get/announcement/getAnnouncementDetail'
-const showAnnouncement = async(item) => {
+import { getAnnouncementDetail } from '@/API/get/announcement/getAnnouncementDetail'
+const showAnnouncement = async (item) => {
 
   const res = await getAnnouncementDetail(item.announcementId)
   console.log(res);
@@ -228,7 +221,7 @@ const showAnnouncement = async(item) => {
 .active {
 
   color: #222;
-  border-bottom: #222  2px solid;
+  border-bottom: #222 2px solid;
 }
 
 /* 排序部分样式 */
@@ -238,7 +231,7 @@ const showAnnouncement = async(item) => {
   justify-content: space-between;
 
   padding: 10px;
-color:grey;
+  color: grey;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -262,7 +255,7 @@ color:grey;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.announcementDetailContainer{
+.announcementDetailContainer {
   width: 100%;
   height: 100%;
   position: fixed;
@@ -276,7 +269,7 @@ color:grey;
   align-items: center;
 }
 
-.announcementDetail{
+.announcementDetail {
   width: 80%;
   height: 60%;
   background-color: #fff;
@@ -285,7 +278,4 @@ color:grey;
   box-sizing: border-box;
   overflow-y: auto;
 }
-
-
-
 </style>
