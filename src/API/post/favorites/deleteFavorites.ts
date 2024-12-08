@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 enum deleteFavoritesApi {
-  deleteFavoritesApi = '/api/favorites/deleteFavoritesApi',
+  deleteFavoritesApi = '/api/star/deleteFavorites',
 }
 const deleteFavorites = (params: any) => {
   return request({

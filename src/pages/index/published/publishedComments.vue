@@ -12,9 +12,11 @@
 
       </view>
       <view class="right">
-         <view class="status" :class="stateClass(comment.state)">{{ stateTrans(comment.state) }}</view>
-        <view @click="deleteComment(comment.commentId)" class="delete_btn">
-          <view><uni-icons type="trash" color="" size="16" /></view>
+        <view class="status" :class="stateClass(comment.state)">{{ stateTrans(comment.state) }}</view>
+        <view class="delete_btn">
+          <view><uni-icons type="trash" color="" size="24" @click="deleteComment(comment.commentId)" />
+            <uni-icons type="redo" color="" size="24" @click="jumpToArticle(comment.materialId)" />
+          </view>
         </view>
       </view>
 
@@ -70,7 +72,7 @@ function groupByYear(results: object[]) {
     const date = new Date(formattedTime);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
-    const day = date.getDate()-1;
+    const day = date.getDate() - 1;
     comment.postMonth = convertToChineseNumber(month); // 确保月份是两位数
     comment.postDay = day.toString().padStart(2, "0")
     // 确保日期是两位数
@@ -86,7 +88,7 @@ function convertToChineseNumber(num: number) {
   const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
   return chineseNumbers[num];
 }
-const stateClass =(state:number)=> {
+const stateClass = (state: number) => {
 
   switch (state) {
     case 1:
@@ -100,21 +102,21 @@ const stateClass =(state:number)=> {
 }
 import deleteMyComment from '@/API/post/deleteMyComment'
 const deleteComment = async (commentId: number) => {
-uni.showModal({
-  title: '提示',
-  content: '确定要删除该评论吗？',
-  success: async function (res) {
-    if (res.confirm) {
-      await deleteMyComment({
+  uni.showModal({
+    title: '提示',
+    content: '确定要删除该评论吗？',
+    success: async function (res) {
+      if (res.confirm) {
+        await deleteMyComment({
           commentId: commentId,
           userId: user_id
         })
-      getComments()
+        getComments()
+      }
     }
-  }
 
 
-})
+  })
 
 
 
@@ -130,6 +132,10 @@ const stateTrans = (state: number) => {
       return '已拒绝';
     default:
   }
+}
+import { goArticleDetail } from '@/hook/usegoArticleDetail';
+const jumpToArticle = (articleId: string) => {
+  goArticleDetail(articleId)
 }
 </script>
 

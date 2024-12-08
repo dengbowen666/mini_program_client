@@ -30,9 +30,9 @@ function wechatLogin() {
 
   if (!token) {
     //有登录态
-    // uni.switchTab({
-    //   url: '/pages/index/index',
-    // })
+    uni.switchTab({
+      url: '/pages/index/index',
+    })
   }
   else {
     //重新登录
@@ -41,7 +41,7 @@ function wechatLogin() {
       provider: 'weixin',
       success: function (loginRes) {
         code = loginRes.code;
-        console.log('login重新登录', {
+        console.log('login登录', {
           code: loginRes.code,
         });
       },
@@ -78,9 +78,9 @@ function wechatLogin() {
           }
         }).catch(err => {
           console.log(err)
-          uni.switchTab({
-            url: '/pages/index/index',
-          })
+          // uni.switchTab({
+          //   url: '/pages/index/index',
+          // })
           uni.showModal({
             title: '登录失败',
             content: '请刷新小程序后重新操作',

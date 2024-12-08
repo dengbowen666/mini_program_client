@@ -54,7 +54,7 @@ const goSearch = () => {
 
 
 }
-const announcements = ref(['10月28日更新优化说明', '维护绿色交流环境，严厉打击...', '新版用户协议及隐私政策已更新'])
+const announcements = ref([])
 const navItem = ref('')
 const sort = ref('time')
 const activeIndex = ref(0) // -1 表示没有任何项目被选中
@@ -129,7 +129,7 @@ const updatePosts = async () => {
 
   if (res.code === 1) {
     // 将新加载的帖子追加到现有的 posts 中
-    posts.value = [...posts.value, ...res.data];
+    posts.value = [...posts.value, ...res.data.records];
   }
 }
 const isShowAnnouncement = ref(false)

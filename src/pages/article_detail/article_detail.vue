@@ -463,14 +463,20 @@ const handleSubmitComment = async () => {
 
 
 
-};
-const transformTime = (timeArray: Array<number>) => {
+}; const transformTime = (timeArray) => {
+  // 检查timeArray是否为null或不是数组，或者长度不足6
+  if (!Array.isArray(timeArray) || timeArray.length < 6) {
+    // console.error('Invalid timeArray:', timeArray);
+    return ''; // 或者返回一个默认值，比如当前日期
+  }
+
   const year = timeArray[0];
   const month = timeArray[1] - 1; // 月份从0开始，所以需要减1
   const day = timeArray[2];
   const hours = timeArray[3];
   const minutes = timeArray[4];
   const seconds = timeArray[5];
+
   // 创建一个Date对象
   const date = new Date(year, month, day, hours, minutes, seconds);
 
@@ -480,11 +486,11 @@ const transformTime = (timeArray: Array<number>) => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-
+    minute: '2-digit',
+    second: '2-digit'
   });
   return formattedDate;
 }
-
 
 const handleCancelFavorite = () => {
   uni.showModal({
